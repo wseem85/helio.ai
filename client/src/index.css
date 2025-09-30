@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Outfit:wght@100..900&display=swap');
+@import 'tailwindcss';
+
+/* Ensure proper text rendering */
+html[lang='ar'] {
+  font-family: 'Cairo', 'Segoe UI', Arial, sans-serif;
+  font-size: 14px;
+}
+
+html[lang='en'] {
+  font-family: 'Outfit', sans-serif;
+}
+
+body {
+  background-color: #151517;
+  color: #f9fafb;
+}
+
+@theme {
+  --color-brand: #5686fe;
+  --color-brand-dark: #366fff;
+  --color-brand-light: #6892fa;
+  --color-black-dark: #151517;
+  --color-black-medium: #1b1b1c;
+  --color-black-light: #2c2c2e;
+  --color-white-strong: #f9fafb;
+}
+/* RTL Support Classes */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.ltr {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Custom RTL-aware utilities */
+.rtl .ml-auto {
+  margin-left: unset;
+  margin-right: auto;
+}
+
+.rtl .mr-auto {
+  margin-right: unset;
+  margin-left: auto;
+}
+
+.rtl .text-left {
+  text-align: right;
+}
+
+.rtl .text-right {
+  text-align: left;
+}
+
+/* Animation directions for RTL */
+.rtl .animate-slide-in-right {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+.rtl .animate-slide-in-left {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Font optimization for Arabic */
+.rtl {
+  font-family: 'Cairo', sans-serif;
+  font-size: 14px;
+}
+[dir='rtl'] .cl-plan-actions::before {
+  content: 'اشترك' !important;
+}
+
+[dir='rtl'] .cl-plan-price::after {
+  content: '/شهر' !important;
+}
+
+/* Force RTL when Arabic is selected */
+body:lang(ar) .cl-pricing-table {
+  direction: rtl;
+}
+/* Add to your global CSS */
+[lang='ar'] .cl-pricingTableCardFeaturesListItemTitle {
+  position: relative;
+}
+
+/* Hide the English text for Arabic */
+[lang='ar'] .cl-pricingTableCardFeaturesListItemTitle {
+  font-size: 0 !important;
+}
+
+/* Show only the Arabic text (in parentheses) */
+[lang='ar'] .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: attr(data-arabic-text) !important;
+  font-size: 14px !important;
+}
+
+/* Set the Arabic text using data attributes */
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__write_articles
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'كتابة المقالات' !important;
+}
+
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__blog_titles
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'تبسيط فكرة' !important;
+}
+
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__generate_images
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'توليد الصور' !important;
+}
+
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__remove_background
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'ازالة خلفية الصور' !important;
+}
+
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__remove_object
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'إزالة العناصر' !important; /* Adjust based on your actual text */
+}
+[lang='ar']
+  .cl-pricingTableCardFeaturesListItem__review_resume
+  .cl-pricingTableCardFeaturesListItemTitle::after {
+  content: 'تحليل السيرة الذاتية' !important; /* Adjust based on your actual text */
+}
+[lang='ar'] .cl-pricingTableCardTitle {
+  font-size: 0 !important;
+}
+
+[lang='ar'] .cl-pricingTableCardTitle::after {
+  font-size: 18px !important;
+  font-weight: bold !important;
+}
+
+/* First plan (usually Free) */
+[lang='ar']
+  .cl-pricingTableCard:first-of-type
+  .cl-pricingTableCardTitle::after {
+  content: 'الخطة المجانية' !important;
+}
+
+/* Second plan (usually Premium) */
+[lang='ar'] .cl-pricingTableCard:last-of-type .cl-pricingTableCardTitle::after {
+  content: 'الخطة الاحترافية' !important;
+}
+
+[lang='ar'] .cl-navbarButtonText__billing {
+  font-size: 0 !important;
+}
+[lang='ar'] .cl-navbarButtonText__billing::after {
+  font-size: 14px !important;
+  content: 'الفوترة';
+}
+
+/* [lang='ar'] .cl-tabListContainer button.cl-tabButton {
+  font-size: 0 !important;
+} */
+/* [lang='ar'] .cl-tabListContainer button.cl-tabButton:nth-child(1)::after {
+  content: 'الاشتراك' !important;
+  font-size: 12px !important;
+}
+[lang='ar'] .cl-tabListContainer button.cl-tabButton:nth-child(2)::after {
+  content: 'كشف الحساب' !important;
+  font-size: 12px !important;
+}
+[lang='ar'] .cl-tabListContainer button.cl-tabButton:nth-child(3)::after {
+  content: 'المدفوعات' !important;
+  font-size: 12px !important;
+} */
+/* Replace the current .reset-tw rule with this more targeted approach */
+.reset-tw {
+  /* Reset typography and styling but preserve layout */
+  font-family: inherit !important;
+  color: inherit !important;
+  line-height: normal !important;
+}
+
+.reset-tw * {
+  /* Reset only text and basic styling, preserve layout properties */
+  font-family: inherit !important;
+  color: inherit !important;
+  line-height: normal !important;
+  margin: revert !important;
+  padding: revert !important;
+  border: revert !important;
+  background: revert !important;
+  text-decoration: revert !important;
+  font-weight: revert !important;
+  font-size: revert !important;
+  font-style: revert !important;
+}
+
+/* Ensure markdown content respects container bounds */
+.reset-tw {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+.reset-tw * {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+  word-break: break-word !important;
+}

@@ -1,0 +1,282 @@
+import { FileText, Loader2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import useLanguage from '../hooks/useLanguage';
+import { toast } from 'react-toastify';
+import Markdown from 'markdown-to-jsx';
+import axios from 'axios';
+import { useAuth } from '@clerk/clerk-react';
+
+const AnalayseResume = () => {
+  const [resume, setResume] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [errorGenerating, setErrorGenerating] = useState('');
+  const [response, setResponse] = useState('');
+  const { getToken } = useAuth();
+  const { t, isRTL } = useLanguage();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (!resume) {
+        toast.error('Please upload a PDF resume file');
+        return;
+      }
+      setResponse('');
+      setErrorGenerating('');
+      setIsGenerating(true);
+
+      const formData = new FormData();
+      formData.append('resume', resume);
+      formData.append('language', isRTL ? 'Arabic' : 'English');
+
+      const token = await getToken();
+      const { data } = await axios.post(
+        BACKEND_URL + '/api/ai/review-resume',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (data.status === 'success') {
+        setResponse(data.content);
+      }
+    } catch (err) {
+      console.log(err);
+      if (err.response?.data?.message) {
+        setErrorGenerating(err.response.data.message);
+      } else {
+        setErrorGenerating(err.message);
+      }
+      toast.error(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Please select a PDF file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        // 10MB limit
+        toast.error('File size should be less than 10MB');
+        return;
+      }
+      setResume(file);
+    }
+  };
+
+  return (
+    <div className="px-4 md:px-6 py-6">
+      <div className="flex flex-col xl:flex-row gap-6 xl:gap-8 max-w-7xl mx-auto">
+        {/* Form Section */}
+        <div className="w-full xl:w-1/2">
+          <form
+            className="h-full xl:h-[700px] p-6 bg-black-light rounded-xl border border-white/20 
+            shadow-lg shadow-black/20 flex flex-col"
+            onSubmit={handleSubmit}
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <Sparkles className="w-5 h-5 text-brand" />
+              <h1 className="text-xl font-semibold">
+                {t('resumeReview.title')}
+              </h1>
+            </div>
+
+            <div className="space-y-6 mb-12">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  {t('resumeReview.upload')}
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleFileChange}
+                    className="w-full p-3 outline-none text-sm rounded-lg 
+                      border border-white/30 bg-black-medium/50
+                      focus:border-brand focus:ring-1 focus:ring-brand/20
+                      transition-all duration-200
+                      file:mr-4 file:py-2 file:px-4 
+                      file:rounded-lg file:border-0 
+                      file:text-sm file:font-medium 
+                      file:bg-brand file:text-white 
+                      hover:file:bg-brand-dark
+                      file:cursor-pointer cursor-pointer"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  {t('resumeReview.supports')}
+                </p>
+                {resume && (
+                  <div className="mt-2 p-2 bg-black-medium/30 rounded-lg">
+                    <p className="text-xs text-green-400 flex items-center gap-2">
+                      <FileText className="w-3 h-3" />
+                      {resume.name} ({(resume.size / 1024 / 1024).toFixed(2)}{' '}
+                      MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={!resume || isGenerating}
+              className="w-full flex justify-center items-center gap-2 
+                px-4 py-3 mt-6 text-sm font-medium
+                bg-gradient-to-r from-[#ff512f] to-[#dd2476]
+                disabled:cursor-not-allowed disabled:opacity-60
+                rounded-lg text-white transition-all duration-200
+                shadow-lg hover:shadow-xl hover:shadow-brand/25"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FileText className="w-4 h-4" />
+              )}
+              {isGenerating
+                ? isRTL
+                  ? 'جاري تحليل السيرة الذاتية...'
+                  : 'Analyzing Resume...'
+                : t('resumeReview.btn')}
+            </button>
+
+            {errorGenerating && (
+              <p className="text-red-400 mt-3 text-center px-4 py-2 text-sm">
+                {errorGenerating}
+              </p>
+            )}
+          </form>
+        </div>
+
+        {/* Results Section */}
+        <div className="w-full xl:w-1/2">
+          <div
+            className="h-full xl:h-[700px] p-6 bg-black-light rounded-xl border border-white/20 
+            shadow-lg shadow-black/20 flex flex-col"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <FileText className="w-5 h-5 text-brand" />
+              <h1 className="text-xl font-semibold">
+                {t('resumeReview.result')}
+              </h1>
+            </div>
+
+            <div className="flex-1 flex flex-col min-h-0">
+              {!response ? (
+                <div className="flex-1 flex justify-center items-center">
+                  {isGenerating ? (
+                    <div className="text-center space-y-4">
+                      <Loader2 className="w-8 h-8 text-brand animate-spin mx-auto" />
+                      <p className="text-sm text-gray-400">
+                        {isRTL
+                          ? 'جاري تحليل السيرة الذاتية...'
+                          : 'Analyzing your resume...'}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-4 max-w-xs">
+                      <div className="w-16 h-16 rounded-full bg-brand/10 flex items-center justify-center mx-auto">
+                        <FileText className="w-8 h-8 text-brand" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-medium">
+                          {isRTL
+                            ? 'ابدأ في تحليل سيرتك الذاتية'
+                            : 'Start Analyzing Your Resume'}
+                        </h3>
+                        <p className="text-sm text-gray-400 leading-relaxed">
+                          {isRTL
+                            ? 'قم برفع سيرة ذاتية بصيغة PDF ثم انقر على "مراجعة السيرة الذاتية"'
+                            : 'Upload a resume as PDF file and click "Review Resume"'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  <div className="prose prose-invert max-w-none">
+                    <Markdown
+                      options={{
+                        forceBlock: true,
+                        overrides: {
+                          h1: {
+                            component: 'h1',
+                            props: {
+                              className:
+                                'text-2xl font-bold my-6 text-white border-b border-white/20 pb-2',
+                            },
+                          },
+                          h2: {
+                            component: 'h2',
+                            props: {
+                              className: 'text-xl font-bold my-4 text-white',
+                            },
+                          },
+                          h3: {
+                            component: 'h3',
+                            props: {
+                              className:
+                                'text-lg font-semibold my-3 text-white',
+                            },
+                          },
+                          p: {
+                            component: 'p',
+                            props: {
+                              className: 'mb-4 leading-relaxed text-gray-300',
+                            },
+                          },
+                          ul: {
+                            component: 'ul',
+                            props: {
+                              className:
+                                'list-disc list-inside mb-4 space-y-1 text-gray-300',
+                            },
+                          },
+                          ol: {
+                            component: 'ol',
+                            props: {
+                              className:
+                                'list-decimal list-inside mb-4 space-y-1 text-gray-300',
+                            },
+                          },
+                          strong: {
+                            component: 'strong',
+                            props: {
+                              className: 'font-semibold text-white',
+                            },
+                          },
+                          em: {
+                            component: 'em',
+                            props: {
+                              className: 'italic text-brand',
+                            },
+                          },
+                        },
+                      }}
+                    >
+                      {response}
+                    </Markdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AnalayseResume;

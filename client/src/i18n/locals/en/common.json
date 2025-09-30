@@ -1,0 +1,162 @@
+{
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "services": "Services",
+    "contact": "Contact",
+    "dashboard": "Dashboard",
+    "generateArticle": "Generate Article",
+    "simplifyIdea": "Simplify an idea",
+    "generateImages": "Generate Images",
+    "removeBackground": "Remove Background",
+    "contentTransformer": "Content Transformer",
+    "analyzeResume": "Analyze Resume",
+    "community": "Community"
+  },
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "language": "Language",
+    "start": "Start Here"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password"
+  },
+  "messages": {
+    "success": "Operation completed successfully",
+    "error": "An error occurred",
+    "confirmation": "Are you sure?"
+  },
+  "hero": {
+    "titlePartOne": "Your All-in-One ",
+    "titlePartTwo": "AI Toolkit ",
+    "titlePartThree": " Is Here",
+    "subTitleOne": "From content creation across images editing to resume analysis,",
+    "subTitleTwo": "gives you perfect tools to work smarter and create faster.",
+    "groupUsersText": "More than 100k users Likes our app"
+  },
+  "tools": {
+    "heading": "Our AI Tools",
+    "desc": "All AI Creation Toll You may need to create , edit , enhance Your content are just in one place , Here",
+    "aiArticleWriter": {
+      "title": "AI Article Writer",
+      "description": "Generate high-quality, engaging articles on any topic with our AI writing technology."
+    },
+    "simplifyIdea": {
+      "title": "ُExplain Like I'm 5",
+      "description": "I will simplify any subject or idea and explain in a way make it easy to memorize "
+    },
+    "aiImageGeneration": {
+      "title": "AI Image Generation",
+      "description": "Create stunning visuals with our AI image generation tool. Experience the power of AI."
+    },
+    "backgroundRemoval": {
+      "title": "Background Removal",
+      "description": "Effortlessly remove backgrounds from your images with our AI-driven tool."
+    },
+    "contentTransformer": {
+      "title": "Content Transformer",
+      "description": "Instantly convert your content into ready-to-publish posts for Instagram, LinkedIn, Facebook, and more."
+    },
+    "resumeReviewer": {
+      "title": "Resume Reviewer",
+      "description": "Get your resume reviewed by AI to improve your chances of landing your dream job."
+    }
+  },
+  "testimonial": {
+    "heading": "Testimonials",
+    "desc": "We have collected some testimonials from our users. They are real people who have used our AI tools.",
+    "userOne": {
+      "headText": "Game-Changer for Content Creation",
+      "name": "John Doe",
+      "title": "Content Manager",
+      "message": "Helio.ai has revolutionized our content workflow. The article writer and title generator have cut our content production time by 70%. Having all AI tools in one platform is incredibly efficient!",
+      "image": "https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=200"
+    },
+    "userTwo": {
+      "headText": "All-in-One AI Powerhouse",
+      "name": "Jane Smith",
+      "title": "Marketing Director",
+      "message": "From image generation to resume analysis, Helio.ai provides everything our team needs. The background removal tool alone has saved us hundreds of dollars monthly. The perfect SaaS AI solution!",
+      "image": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=200"
+    },
+    "userThree": {
+      "headText": "Unmatched Tool Variety",
+      "name": "Bonnie Green",
+      "title": "Startup Founder",
+      "message": "As a small business, we can't afford multiple AI tool subscriptions. Helio.ai gives us access to 50+ specialized tools at one affordable price. The resume analyzer helped me hire the perfect team!",
+      "image": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=200&h=200&auto=format&fit=crop"
+    }
+  },
+  "plans": {
+    "title": "Start Free , Upgrade Whenever You want",
+    "desc": "Choose the plan that fits on your own needs , we offer a wide variety of plans suitable for all use cases"
+  },
+  "dashboard": {
+    "totalCreations": "Total Creations",
+    "activePlan": "Active plan",
+    "headings": {
+      "info": "User Info",
+      "totalCreationAndPlan": "Plan & Creations",
+      "newCreations": "Creations"
+    },
+    "userInfo": {
+      "name": "Name",
+      "photo": "Photo",
+      "joined": "Joined",
+      "lastApdate": "Last Update"
+    }
+  },
+  "generateArticles": {
+    "articleConfig": "Article Configuration",
+    "articleTopic": "Article Topic",
+    "articleLength": "Article Length",
+    "articleGenerateBtn": "Generate Article",
+    "generatedArticle": "Generated Article"
+  },
+  "simplifyIdea": {
+    "title": "Idea Simplifier",
+    "keywords": "Idea Desc",
+    "category": "Who needs to understand this?",
+    "btn": "Explain Idea",
+    "result": "Explained Idea"
+  },
+  "generateImage": {
+    "title": "Image Generator",
+    "keywords": "Describe your image",
+    "category": "Style",
+    "btn": "Generate Image",
+    "result": "Generated Image"
+  },
+  "backgroundRemoval": {
+    "title": "Background Removal",
+    "upload": "Upload Image",
+    "supports": "Supports JPG, PNG, and all imag formats",
+    "btn": "Remove Background",
+    "result": "Processed Image"
+  },
+  "contentTransformer": {
+    "title": "Content Transformer",
+    "upload": "Paste Your Content",
+    "supports": "Select platforms to generate for",
+    "btn": "Transform Content",
+    "result": "Generated Posts"
+  },
+  "resumeReview": {
+    "title": "Resume Review",
+    "upload": "Upload Resume",
+    "supports": "Supports PDF formats only.",
+    "btn": "Review Resume",
+    "result": "Analysys Results"
+  }
+}
