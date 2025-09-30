@@ -10,7 +10,7 @@ const app = express();
 connectCloudinary();
 app.use(
   cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://helio-ai-backend.onrender.com/'],
     credentials: true,
   })
 );
