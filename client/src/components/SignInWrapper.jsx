@@ -43,6 +43,7 @@ const SignInWrapper = ({ onLoaded, onSuccess }) => {
         fallback={<SignInFallback />}
         onSuccess={onSuccess}
         fallbackRedirectUrl="/ai"
+        signInForceRedirectUrl="/ai"
       />
     </div>
   );
