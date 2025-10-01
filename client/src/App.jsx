@@ -39,10 +39,11 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="darc"
+        theme="dark"
       />
       <Routes>
         <Route path="/" element={<Home />} />
+
         <Route path="/ai" element={<Layout />}>
           <Route index element={<Dashboard />} />
           <Route path="generate-article" element={<GenerateArticle />} />
