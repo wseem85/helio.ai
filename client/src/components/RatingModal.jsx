@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { NavLink } from 'react-router-dom';
+import useLanguage from '../hooks/useLanguage';
 
 const RatingModal = ({
   isOpen,
@@ -17,16 +18,25 @@ const RatingModal = ({
   const [hoverRating, setHoverRating] = useState(0);
   const [selectedRating, setSelectedRating] = useState(currentRating);
   const [review, setReview] = useState(currentReview);
+  const { isRTL } = useLanguage();
   const handleStarClick = (rating) => {
     setSelectedRating(rating);
   };
 
   const handleSubmit = () => {
     if (!selectedRating) {
-      onError('Please provide a Rateing, 5 stars would be fine :)');
+      onError(
+        isRTL
+          ? 'يرجى تقديم تقييم، ٥ نجوم ستكون رائعة'
+          : 'Please provide a Rating, 5 stars would be great'
+      );
     }
     if (!review) {
-      onError('Please provide a Review, What do you think? :)');
+      onError(
+        isRTL
+          ? 'يرجى كتابة مراجعة، ما هو رأيك؟ 😊'
+          : 'Please provide a Review, What do you think? :)'
+      );
     }
     if (selectedRating && review) {
       onError('');
@@ -69,7 +79,7 @@ const RatingModal = ({
       {user ? (
         <div className="relative bg-black-medium border-white/80 text-white-light rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
           <p className="text-xl font-medium  mb-4 text-center">
-            5 Stars will be fine
+            {isRTL ? 'تقييم ٥ نجوم سيكون رائعاً!' : '5 Stars will be fine'}
           </p>
 
           {/* Star Rating */}
@@ -108,7 +118,7 @@ const RatingModal = ({
             <textarea
               defaultValue={currentReview}
               onChange={(e) => setReview(e.target.value)}
-              placeholder="What you Think ? "
+              placeholder={isRTL ? 'ما هو رأيك؟' : 'What do you think?'}
               className="w-full bg-black-light text-white/80 outline-none p-2 border  "
               rows={4}
             />
@@ -120,7 +130,7 @@ const RatingModal = ({
               onClick={onClose}
               className="px-4 py-2 bg-red-400 text-white hover:text-gray-50 hover:bg-red-500 rounded-xl duration-200   transition-colors"
             >
-              Cancel
+              {isRTL ? 'سأقيمه لاحقا' : 'Cancel'}
             </button>
             <button
               onClick={handleSubmit}
@@ -131,7 +141,13 @@ const RatingModal = ({
                   : 'bg-brand-light opacity-100 hover:bg-brand hover:text-white'
               }`}
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Rating'}
+              {isSubmitting
+                ? isRTL
+                  ? 'جاري التقديم...'
+                  : 'Submitting...'
+                : isRTL
+                ? 'تقييم التطبيق'
+                : 'Submit Rating'}
             </button>
           </div>
         </div>
@@ -141,17 +157,20 @@ const RatingModal = ({
             &times;
           </button>
           <p className="text-lg font-medium mt-6  mb-4 text-center">
-            You must Log in to perform this action
+            {isRTL
+              ? 'يجب تسجيل الدخول لإتمام هذه العملية'
+              : 'You must Log in to perform this action'}
           </p>
           <p className="font-light mb-8">
-            Please log in using your account , or create one if you do not have
-            one yet
+            {isRTL
+              ? 'الرجاء تسجيل الدخول باستخدام حسابك، أو إنشاء حساب جديد إذا لم يكن لديك واحد بعد'
+              : 'Please log in using your account, or create one if you do not have one yet'}
           </p>
           <NavLink
             className="text-white bg-brand rounded-md w-[120px] text-center max-w-[150px] mx-auto py-1.5 px-2"
             to="/login"
           >
-            Log in
+            {isRTL ? 'تسجيل الدخول' : 'Log in'}
           </NavLink>
         </div>
       )}

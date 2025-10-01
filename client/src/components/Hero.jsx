@@ -29,7 +29,11 @@ const Hero = () => {
         className="text-xl bg-brand hover:bg-brand-dark transition-all duration-200 cursor-pointer px-6 py-3 rounded-xl max-w-[200px] mx-auto text-white"
         onClick={() => {
           if (!user) {
-            toast.warning('You need to log in n order to use our tools');
+            toast.warning(
+              isRTL
+                ? 'نرجو تسجيل الدخول للاستفادة من أدواتنا'
+                : 'Please log in to access our tools'
+            );
           } else navigate('/ai');
         }}
       >

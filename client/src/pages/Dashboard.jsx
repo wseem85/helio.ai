@@ -75,14 +75,7 @@ const Dashboard = () => {
     return null;
   }
   console.log(user);
-  const {
-    fullName,
-    createdAt,
-    id,
-    imageUrl,
-
-    updatedAt,
-  } = user;
+  const { fullName, createdAt, id, imageUrl, firstName, updatedAt } = user;
 
   return (
     <div className="h-full space-y-8  max-h-screen p-6 mt-12 md:mt-0">
@@ -93,7 +86,7 @@ const Dashboard = () => {
         <div className="flex flex-wrap gap-4">
           <div className="flex gap-2 items-end px-5 py-2 rounded-xl bg-black-light shadow-sm shadow-white/50">
             <h3 className="text-lg">{t('dashboard.userInfo.name')}</h3>
-            <p className="text-white/70 text-sm">{fullName}</p>
+            <p className="text-white/70 text-sm">{fullName || firstName}</p>
           </div>
           <div className="flex gap-2 items-end px-5 py-2 rounded-xl bg-black-light shadow-sm shadow-white/50">
             <h3 className="text-lg">{t('dashboard.userInfo.photo')}</h3>

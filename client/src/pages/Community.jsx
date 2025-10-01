@@ -22,7 +22,7 @@ const Community = () => {
   const [submittingReview, setSubmittingReview] = useState(false);
 
   const { getToken } = useAuth();
-  const { isRTL } = useLanguage();
+  const { t, isRTL } = useLanguage();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const { user } = useUser();
 
@@ -86,6 +86,9 @@ const Community = () => {
         setCreations(creationsResponse.value.data.creations);
       } else if (creationsResponse.status === 'rejected') {
         console.error('Failed to fetch creations:', creationsResponse.reason);
+        setErrorGettingData(
+          `Failed to get creations: ${creationsResponse.reason.message}`
+        );
         toast.error(
           `Failed to get creations: ${creationsResponse.reason.message}`
         );
@@ -246,15 +249,18 @@ const Community = () => {
     <div className="flex-1 h-full w-full flex flex-col items-center gap-4 p-6 mt-12 md:mt-0">
       <div className="mb-8 pb-4 border-b border-white/60 w-full">
         <h3 className="text-2xl tracking-wide mb-2">
-          Creative Creations made by our community
+          {t('community.creationsHeading')}
         </h3>
+        <p className="text-white/70 mb-6">
+          {t('community.creationsSubHeading')}
+        </p>
         <div className="bg-black-light h-full w-full rounded-xl min-h-[300px]">
           {loadingData && (
             <div className="flex justify-center items-center min-h-[300px]">
               <div className="text-center">
                 <Loader2 className="text-brand animate-spin w-8 h-8 mx-auto mb-2" />
                 <p className="text-white/70 text-sm">
-                  Loading community creations...
+                  {isRTL ? 'جاري التحميل...' : 'Loading community creations...'}
                 </p>
               </div>
             </div>
@@ -263,13 +269,15 @@ const Community = () => {
           {!loadingData && errorGettingData && (
             <div className="flex flex-col justify-center items-center min-h-[300px] p-6">
               <p className="text-red-400 text-center mb-4">
-                Error getting shared data: {errorGettingData}
+                {isRTL
+                  ? `حدث خطأ أثناء تحميل البيانات : ${errorGettingData}`
+                  : `Error getting shared data: ${errorGettingData}`}
               </p>
               <button
                 onClick={handleRetry}
                 className="bg-brand hover:bg-brand/80 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                Try Again
+                {isRTL ? 'حاول مجددا' : 'Try Again'}
               </button>
             </div>
           )}
@@ -278,20 +286,25 @@ const Community = () => {
             <div className="min-h-[200px] flex justify-center items-center p-6">
               <div className="text-center">
                 <p className="mb-4">
-                  There are no images generated using our app shared by the
-                  community
+                  {isRTL
+                    ? 'لم يتم مشاركة أي صور منشأة باستخدام تطبيقنا من قبل المجتمع بعد'
+                    : 'There are no images generated using our app shared by the community'}
                 </p>
                 <p>
-                  Be the first one to share generated images with the community
-                  by going to{' '}
+                  {isRTL
+                    ? 'كُن أول من يشارك الصور المُنشأة مع المجتمع من خلال التوجّه إلى'
+                    : 'Be the first one to share generated images with the community by going to'}
                   <NavLink
                     to="/ai/generate-image"
                     className="text-brand underline hover:text-brand/80"
                   >
-                    Generate Images
+                    {isRTL ? 'مولد الصور' : 'Generate Images'}
                   </NavLink>{' '}
-                  and make sure to toggle{' '}
-                  <span className="text-green-400">publish</span> on.
+                  {isRTL ? 'تأكد من تفعيل زر ' : 'and make sure to toggle'}
+                  <span className="text-green-400">
+                    {isRTL ? 'شارك الصورة مع مجتمعنا' : 'publish'}
+                  </span>{' '}
+                  {!isRTL ? 'on.' : null}
                 </p>
               </div>
             </div>
@@ -342,29 +355,33 @@ const Community = () => {
 
       <div className="w-full">
         <h3 className="text-2xl tracking-wide mb-2">
-          Love Our App? Share Your Experience!
+          {t('community.reviewsHeading')}
         </h3>
-        <p className="text-white/70 mb-6">
-          Your feedback helps us improve and helps others discover our app
-        </p>
+        <p className="text-white/70 mb-6">{t('community.reviewsSubHeading')}</p>
 
         {/* Stats Section */}
         {!loadingData && !errorGettingData && reviews?.statistics && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
             <div className="px-5 py-4 rounded-xl bg-black-light shadow-sm shadow-white/50">
-              <h3 className="text-lg mb-1">Average Rating</h3>
+              <h3 className="text-lg mb-1">{t('community.averageRating')}</h3>
               <p className="text-2xl font-semibold text-brand">
                 {reviews.statistics.averageRating || 0}
               </p>
-              <p className="text-white/50 text-sm">out of 5 stars</p>
+              <p className="text-white/50 text-sm">
+                {t('community.averageRatingHint')}
+              </p>
             </div>
 
             <div className="px-5 py-4 rounded-xl bg-black-light shadow-sm shadow-white/50">
-              <h3 className="text-lg mb-1">Community Reviews</h3>
+              <h3 className="text-lg mb-1">
+                {t('community.communityReviews')}
+              </h3>
               <p className="text-2xl font-semibold text-white">
                 {reviews.statistics.totalRatings || 0}
               </p>
-              <p className="text-white/50 text-sm">and counting</p>
+              <p className="text-white/50 text-sm">
+                {t('community.communityReviewsHint')}
+              </p>
             </div>
           </div>
         )}
@@ -374,7 +391,7 @@ const Community = () => {
             <div className="text-center">
               <Loader2 className="text-brand animate-spin w-8 h-8 mx-auto mb-2" />
               <p className="text-white/70 text-sm">
-                Loading community reviews...
+                {isRTL ? 'جاري التحميل...' : 'Loading community reviews...'}
               </p>
             </div>
           </div>
@@ -383,17 +400,17 @@ const Community = () => {
         {/* Dynamic User Rating Box */}
         {reviews?.statistics?.userHasReviewed ? (
           <div className="px-5 py-4 rounded-xl bg-brand/20 border border-brand/30 mb-8">
-            <h3 className="text-lg mb-1">Your Rating</h3>
+            <h3 className="text-lg mb-1">{t('community.userRating')}</h3>
             <StarRating rating={reviews.statistics.userRating} />
             <p className="text-white/70 text-sm mt-2">
-              Thanks for your feedback! ✨
+              {t('community.thanksRating')}✨
             </p>
             <p className="text-white/60 text-sm mt-1">"{userReview}"</p>
             <button
               onClick={() => setIsRatingModalOpen(true)}
               className="mt-2 text-brand hover:text-brand/80 text-sm underline"
             >
-              Update your review
+              {t('community.updateRating')}
             </button>
           </div>
         ) : !loadingData && !loadingReviews ? (
@@ -403,7 +420,9 @@ const Community = () => {
               disabled={submittingReview}
               className="bg-black-light cursor-pointer text-white/60 px-6 py-3 rounded-lg border border-white/60 hover:border-white/80 hover:text-white/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submittingReview ? 'Submitting...' : 'Rate Our App'}
+              {submittingReview
+                ? `${isRTL ? 'يتم رفع تقييمك...' : 'Submitting...'}`
+                : `${t('community.rateBtn')}`}
             </button>
           </div>
         ) : null}
@@ -427,7 +446,7 @@ const Community = () => {
 
         {/* Reviews Section */}
         <div className="mt-8">
-          <h3 className="text-xl mb-4">What Our Users Say</h3>
+          <h3 className="text-xl mb-4">{t('community.reviews')}</h3>
           {loadingReviews ? (
             <div className="flex justify-center py-4">
               <Loader2 className="text-brand animate-spin w-6 h-6" />
@@ -447,7 +466,9 @@ const Community = () => {
                   </div>
                 ))
               ) : (
-                <p className="text-white/70">Reviews coming soon...</p>
+                <p className="text-white/70">
+                  {isRTL ? 'جاري تحميل المراجعات...' : 'Reviews coming soon...'}
+                </p>
               )}
             </div>
           )}
@@ -456,7 +477,7 @@ const Community = () => {
               onClick={fetchReviews}
               className="text-brand hover:text-brand/80 transition-colors"
             >
-              Refresh Reviews →
+              {t('community.refreshReviews')} →
             </button>
           )}
         </div>

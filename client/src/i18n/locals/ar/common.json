@@ -161,5 +161,27 @@
     "supports": "يدعم صيغة PDF فقط.",
     "btn": "مراجعة السيرة الذاتية",
     "result": "نتائج التحليل"
+  },
+  "community": {
+    "creationsHeading": "إبداعات متميزة من صنع مجتمعنا",
+    "creationsSubHeading": "اظهر هنا من خلال الذهاب إلى أداة إنشاء الصور ولا تنسى الضغط على زر النشر قبل البدء في الإنشاء",
+    "reviewsHeading": "هل تحب تطبيقنا؟ شاركنا تجربتك!",
+    "reviewsSubHeading": "ملاحظاتك تساعدنا على التحسن وتساعد الآخرين في اكتشاف تطبيقنا",
+    "averageRating": "متوسط التقييم",
+    "averageRatingHint": "من 5 نجوم",
+    "communityReviews": "تقييمات المجتمع",
+    "communityReviewsHint": "وهذا العدد في تزايد",
+    "rateBtn": "قيم تطبيقنا",
+    "userRating": "تقييمك",
+    "thanksRating": "شكراً على ملاحظاتك!",
+    "updateRating": "حدث تقييمك",
+    "reviews": "ماذا يقول مستخدمونا",
+    "refreshReviews": "تحديث التقييمات"
+  },
+  "footer": {
+    "copyRightsOne": "حقوق النشر",
+    "copyRightsTwo": "جميع الحقوق محفوظة.",
+    "otherProjects": "اطلع على المشاريع الأخرى",
+    "callMe": "يمكنك أيضًا الاتصال بي أو مراسلتي"
   }
 }

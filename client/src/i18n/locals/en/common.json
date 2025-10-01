@@ -158,5 +158,27 @@
     "supports": "Supports PDF formats only.",
     "btn": "Review Resume",
     "result": "Analysys Results"
+  },
+  "community": {
+    "creationsHeading": "Creative Creations made by our community",
+    "creationsSubHeading": "Show up here by going to our generate Image tool and dont forget to publish button before start creating ",
+    "reviewsHeading": "Love Our App? Share Your Experience!",
+    "reviewsSubHeading": "Your feedback helps us improve and helps others discover our app",
+    "averageRating": "Average Rating",
+    "averageRatingHint": "out of 5 stars",
+    "communityReviews": "Community Reviews",
+    "communityReviewsHint": "and counting",
+    "rateBtn": "Rate Our App",
+    "userRating": "Your Rating",
+    "thanksRating": "Thanks for your feedback!",
+    "updateRating": "Update your review",
+    "reviews": "What Our Users Say",
+    "refreshReviews": "refresh reviews"
+  },
+  "footer": {
+    "copyRightsOne": "Copyright",
+    "copyRightsTwo": "All rights reserved.",
+    "otherProjects": "Check out other projects",
+    "callMe": "You can also call, or text me"
   }
 }

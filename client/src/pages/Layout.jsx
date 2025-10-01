@@ -8,14 +8,15 @@ import { Protect } from '@clerk/clerk-react';
 const Layout = () => {
   const { isRTL, getFlexDirection } = useLanguage();
   return (
-    <div className="min-h-screen bg-black-dark">
+    <div className="min-h-screen bg-black-dark pb-12">
       <Navbar />
       <SideBar />
       <Protect
         fallback={
           <p className="text-white min-h-screen text-2xl px-8 text-center flex justify-center items-center">
-            Sorry, only Login users can access this content, Please login to
-            continue.
+            {isRTL
+              ? 'عذرًا،  يرجى تسجيل الدخول الوصول إلى هذا المحتوى.'
+              : 'Sorry, only Login users can access this content, Please login to continue.'}
           </p>
         }
       >
