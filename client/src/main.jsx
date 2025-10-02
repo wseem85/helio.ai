@@ -5,6 +5,7 @@ import App from './App.jsx';
 import { LanguageProvider } from './contexts/LanguageContext.jsx';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import ClerkLocalizedApp from './components/ClerkLocalizationapp.jsx';
 import './i18n/index.js';
 const queryClient = new QueryClient({

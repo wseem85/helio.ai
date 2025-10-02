@@ -180,5 +180,42 @@
     "copyRightsTwo": "All rights reserved.",
     "otherProjects": "Check out other projects",
     "callMe": "You can also call, or text me"
+  },
+  "seoContent": {
+    "home": {
+      "title": "HelioAI - Create Amazing AI Content & Images",
+      "description": "Generate stunning AI images, simplify complex ideas, and create amazing content with our powerful AI tools. Free tier available with premium features.",
+      "keywords": "AI, image generation, content creation, artificial intelligence, AI tools, image generator, AI content",
+      "ogTitle": "HelioAI - AI Powered Content Creation Platform",
+      "ogDescription": "Create stunning AI-generated images, simplify complex ideas, and generate content with our advanced AI tools. Free and premium plans available."
+    },
+    "generateImage": {
+      "title": "AI Image Generator - Create Stunning Images | HelioAI",
+      "description": "Generate beautiful, high-quality images with our AI image generator. Multiple styles, fast generation, and easy to use. Create custom AI art in seconds."
+    },
+    "generateArticles": {
+      "title": "AI Article Generator - Create Engaging Content | HelioAI",
+      "description": "Generate well-written, SEO-optimized articles with our AI article writer. Perfect for blogs, websites, and content marketing. Save time and boost creativity."
+    },
+    "simplifyIdea": {
+      "title": "Simplify Complex Ideas - AI Explanation Tool | HelioAI",
+      "description": "Make complex concepts easy to understand with our AI explanation tool. Perfect for students, educators, and professionals. Break down any topic simply."
+    },
+    "reviewResume": {
+      "title": "AI Resume Review - Optimize Your CV | HelioAI",
+      "description": "Get professional resume feedback and optimization suggestions from our AI. Improve your CV format, content, and keywords for better job opportunities."
+    },
+    "removeBackground": {
+      "title": "Remove Image Background - AI Background Remover | HelioAI",
+      "description": "Remove backgrounds from images instantly with our AI background remover. Clean, precise cuts for product photos, portraits, and creative projects."
+    },
+    "contentTransformer": {
+      "title": "Content Transformer - Create Social Media Posts | HelioAI",
+      "description": "Transform any content into ready-to-publish social media posts. Optimize for Instagram, Twitter, LinkedIn, Facebook, and more with AI-powered rewriting."
+    },
+    "community": {
+      "title": "Community Creations - See What Users Created | HelioAI",
+      "description": "Explore amazing AI creations from our community. View shared images, read user reviews, and rate our app. Get inspired by what others have created with HelioAI."
+    }
   }
 }
