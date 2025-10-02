@@ -5,6 +5,7 @@ const pdf = require('pdf-parse/lib/pdf-parse.js');
 const { clerkClient } = require('@clerk/express');
 const { default: axios } = require('axios');
 const cloudinary = require('cloudinary').v2;
+
 const openai = new OpenAI({
   apiKey: process.env.GEMINI_API_KEY,
   baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
