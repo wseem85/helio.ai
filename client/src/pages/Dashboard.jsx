@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { dummyCreationData } from '../assets/assets';
 import { Gem, Sparkles } from 'lucide-react';
 import { Protect, useAuth, useUser } from '@clerk/clerk-react';
@@ -6,49 +6,69 @@ import CreationItem from './CreationItem';
 import useLanguage from '../hooks/useLanguage';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-//  firstName,fullName,createdAt,hasImage,imageUrl,lastSignInAt,updatedAt
+import { useQuery } from '@tanstack/react-query';
+
 const Dashboard = () => {
   const { user, isLoaded, isSignedIn } = useUser();
-  const [isLoadingData, setIsLoadingData] = useState(true);
-  const [errorGettingData, setErrorGettingData] = useState('');
-  const [creations, setCreations] = useState([]);
   const [showAllCreations, setShowAllCreations] = useState(false);
   const { t, isRTL } = useLanguage();
   const { getToken } = useAuth();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-  // console.log(user.createdAt);
-  useEffect(() => {
-    const getDashboardData = async () => {
-      try {
-        setIsLoadingData(true);
-        const token = await getToken();
-        const { data } = await axios.get(
-          BACKEND_URL + '/api/user/user-creations',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        if (data.status === 'success') {
-          console.log(data);
-          setCreations(data.creations);
+
+  // Query key constants for better cache management
+  const QUERY_KEYS = {
+    USER_CREATIONS: ['user-creations'],
+    DASHBOARD_DATA: ['dashboard-data'],
+  };
+
+  // Fetch user creations with TanStack Query
+  const {
+    data: creationsData,
+    isLoading: isLoadingData,
+    error: errorGettingData,
+    refetch: refetchCreations,
+  } = useQuery({
+    queryKey: QUERY_KEYS.USER_CREATIONS,
+    queryFn: async () => {
+      const token = await getToken();
+      const { data } = await axios.get(
+        `${BACKEND_URL}/api/user/user-creations`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 15000,
         }
-      } catch (error) {
-        toast.error(`Error loading dashboard data: ${error.message}`);
-        setErrorGettingData(`Error loading dashboard data: ${error.message}`);
-        console.error('Error loading dashboard data:', error);
-      } finally {
-        setIsLoadingData(false);
+      );
+
+      if (data.status === 'success') {
+        console.log('Creations data:', data);
+        return data.creations || [];
       }
-    };
-    if (isLoaded && isSignedIn) {
-      getDashboardData();
-    }
-  }, [isLoaded, isSignedIn, BACKEND_URL, getToken]);
-  const handToggleShowAllCreations = () => {
+      throw new Error(data.message || 'Failed to fetch creations');
+    },
+    enabled: !!isLoaded && !!isSignedIn, // Only fetch when user is loaded and signed in
+    staleTime: 10 * 60 * 1000, // 10 minutes cache
+    cacheTime: 30 * 60 * 1000, // 30 minutes cache
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    onError: (error) => {
+      toast.error(`Error loading dashboard data: ${error.message}`);
+      console.error('Error loading dashboard data:', error);
+    },
+  });
+
+  const creations = creationsData || [];
+
+  const handleToggleShowAllCreations = () => {
     setShowAllCreations(!showAllCreations);
   };
+
+  const handleRetry = () => {
+    refetchCreations();
+  };
+
+  // Loading state
   if (!isLoaded || isLoadingData) {
     return <DashboardSkeleton isRTL={isRTL} />;
   }
@@ -71,14 +91,31 @@ const Dashboard = () => {
     );
   }
 
-  if (!isLoaded) {
-    return null;
+  // Error state with retry option
+  if (errorGettingData) {
+    return (
+      <div className="h-full flex items-center justify-center p-6">
+        <div className="text-center">
+          <h3 className="text-xl mb-2 text-red-400">
+            {isRTL ? 'حدث خطأ في تحميل البيانات' : 'Error loading data'}
+          </h3>
+          <p className="text-gray-400 mb-4">{errorGettingData.message}</p>
+          <button
+            onClick={handleRetry}
+            className="bg-brand hover:bg-brand/80 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            {isRTL ? 'حاول مرة أخرى' : 'Try Again'}
+          </button>
+        </div>
+      </div>
+    );
   }
-  console.log(user);
-  const { fullName, createdAt, id, imageUrl, firstName, updatedAt } = user;
+
+  const { fullName, createdAt, imageUrl, firstName, updatedAt } = user;
 
   return (
-    <div className="h-full space-y-8  max-h-screen p-6 mt-12 md:mt-0">
+    <div className="h-full space-y-8 max-h-screen p-6 mt-12 md:mt-0">
+      {/* User Info Section */}
       <div className="mb-6 border-b border-white/50 pb-6">
         <h3 className="text-xl tracking-wider mb-2">
           {t('dashboard.headings.info')}
@@ -90,7 +127,11 @@ const Dashboard = () => {
           </div>
           <div className="flex gap-2 items-end px-5 py-2 rounded-xl bg-black-light shadow-sm shadow-white/50">
             <h3 className="text-lg">{t('dashboard.userInfo.photo')}</h3>
-            <img className="w-6 h-6 rounded-full" src={imageUrl} />
+            <img
+              className="w-6 h-6 rounded-full"
+              src={imageUrl}
+              alt={fullName || firstName}
+            />
           </div>
           <div className="flex gap-2 items-end px-5 py-2 rounded-xl bg-black-light shadow-sm shadow-white/50">
             <h3 className="text-lg">{t('dashboard.userInfo.joined')}</h3>
@@ -106,30 +147,29 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Stats Section */}
       <div className="mb-6 border-b border-white/50 pb-6">
         <h3 className="text-xl tracking-wider mb-2">
-          {' '}
           {t('dashboard.headings.totalCreationAndPlan')}
         </h3>
         <div className="flex justify-start gap-4 flex-wrap">
-          {/* Total Creation  */}
+          {/* Total Creation */}
           <div className="flex items-center justify-between w-72 p-4 px-6 bg-black-light rounded-xl shadow-sm shadow-white/60">
             <div>
               <p className="text-sm">{t('dashboard.totalCreations')}</p>
-              <h2 className="text-xl font-semibold">{creations?.length}</h2>
+              <h2 className="text-xl font-semibold">{creations.length}</h2>
             </div>
             <div className="w-8 h-8 flex justify-center items-center rounded-xl bg-gradient-to-br from-[#cc2b5e] to-[#753a88]">
               <Sparkles className="w-4 text-white" />
             </div>
           </div>
+
           {/* Active plan */}
           <div className="flex items-center justify-between w-72 p-4 px-6 bg-black-light rounded-xl shadow-sm shadow-white/60">
             <div>
               <p className="text-sm">{t('dashboard.activePlan')}</p>
               <h2 className="text-xl font-semibold">
-                {/* <Protect fallback={<p>Users that are signed-out can see this.</p>}>
-              <p>Users that are signed-in can see this.</p>
-            </Protect> */}
                 <Protect plan="premium" fallback={isRTL ? 'مجانية' : 'Free'}>
                   {isRTL ? 'احترافية' : 'Premium'}
                 </Protect>
@@ -141,41 +181,53 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Creations Section */}
       <div className="space-y-3">
-        <h3 className="text-xl tracking-wider mb-2">
-          {t('dashboard.headings.newCreations')}
-        </h3>
-        {errorGettingData ? (
-          <p className="text-red-400">{errorGettingData}</p>
-        ) : null}
-        {!errorGettingData && creations.length && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl tracking-wider mb-2">
+            {t('dashboard.headings.newCreations')}
+          </h3>
+          {creations.length > 0 && (
+            <button
+              onClick={() => refetchCreations()}
+              className="text-sm text-brand hover:text-brand/80 transition-colors"
+            >
+              {isRTL ? 'تحديث' : 'Refresh'}
+            </button>
+          )}
+        </div>
+
+        {creations.length === 0 ? (
+          <div className="text-center py-8 text-gray-400">
+            <p>
+              {isRTL
+                ? 'لا توجد إبداعات حتى الآن. ابدأ بإنشاء أول صورة لك!'
+                : 'No creations yet. Start by creating your first image!'}
+            </p>
+          </div>
+        ) : (
           <div>
-            {creations.slice(0, 3).map((item) => (
-              <CreationItem key={item.id} item={item} />
-            ))}
-            {creations.slice(3).length && (
-              <div>
-                {!showAllCreations ? (
-                  <button
-                    onClick={handToggleShowAllCreations}
-                    className="font-semibold mt-2 mb-1 underline cursor-pointer text-brand"
-                  >
-                    Show More
-                  </button>
-                ) : null}
-                {showAllCreations && (
-                  <>
-                    {creations.slice(3).map((item) => (
-                      <CreationItem key={item.id} item={item} />
-                    ))}
-                    <button
-                      onClick={handToggleShowAllCreations}
-                      className="font-semibold mt-2 mb-1 underline cursor-pointer text-brand"
-                    >
-                      Show Less
-                    </button>
-                  </>
-                )}
+            {creations
+              .slice(0, showAllCreations ? creations.length : 3)
+              .map((item) => (
+                <CreationItem key={item.id} item={item} />
+              ))}
+
+            {creations.length > 3 && (
+              <div className="mt-4">
+                <button
+                  onClick={handleToggleShowAllCreations}
+                  className="font-semibold underline cursor-pointer text-brand hover:text-brand/80 transition-colors"
+                >
+                  {showAllCreations
+                    ? isRTL
+                      ? 'عرض أقل'
+                      : 'Show Less'
+                    : isRTL
+                    ? 'عرض المزيد'
+                    : 'Show More'}
+                </button>
               </div>
             )}
           </div>
@@ -187,6 +239,7 @@ const Dashboard = () => {
 
 export default Dashboard;
 
+// Skeleton component remains the same
 const DashboardSkeleton = ({ isRTL }) => {
   return (
     <div className="h-full space-y-8 max-h-screen p-6 mt-12 md:mt-0 animate-pulse">

@@ -1,146 +1,94 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useAuth, useUser } from '@clerk/clerk-react';
 import { NavLink } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useLanguage from '../hooks/useLanguage';
 import { Heart, Loader2 } from 'lucide-react';
 import StarRating from '../components/StarRating';
 import RatingModal from '../components/RatingModal';
 
 const Community = () => {
-  const [creations, setCreations] = useState([]);
-  const [loadingData, setLoadingData] = useState(true);
-  const [errorGettingData, setErrorGettingData] = useState('');
-  const [reviews, setReviews] = useState({});
-  const [loadingReviews, setLoadingReviews] = useState(false);
-
   const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState('');
   const [errorRating, setErrorRating] = useState('');
-  const [submittingReview, setSubmittingReview] = useState(false);
-
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { getToken } = useAuth();
   const { t, isRTL } = useLanguage();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
   const { user } = useUser();
+  const queryClient = useQueryClient();
 
-  const fetchReviews = useCallback(async () => {
-    try {
-      setLoadingReviews(true);
+  // Cache key constants
+  const QUERY_KEYS = {
+    CREATIONS: ['community-creations'],
+    REVIEWS: ['community-reviews'],
+  };
+
+  // Fetch creations with React Query
+  const {
+    data: creationsData,
+    isLoading: loadingData,
+    error: errorGettingData,
+    refetch: refetchData,
+  } = useQuery({
+    queryKey: [...QUERY_KEYS.CREATIONS, isRTL ? 'ar' : 'en'],
+    queryFn: async () => {
       const token = await getToken();
+      const { data } = await axios.post(
+        `${BACKEND_URL}/api/user/published-creations`,
+        { language: isRTL ? 'Arabic' : 'English' },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 20000,
+        }
+      );
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: 2,
+  });
 
+  const creations = creationsData?.creations || [];
+
+  // Fetch reviews with React Query
+  const {
+    data: reviewsData,
+    isLoading: loadingReviews,
+    refetch: fetchReviews,
+  } = useQuery({
+    queryKey: QUERY_KEYS.REVIEWS,
+    queryFn: async () => {
+      const token = await getToken();
       const { data } = await axios.get(`${BACKEND_URL}/api/user/all-reviews`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 20000,
       });
-
-      if (data.status === 'success') {
-        setReviews(data.data || {});
-
-        // Update user rating and review if they exist
-        if (data.data?.statistics?.userHasReviewed) {
-          setUserRating(data.data.statistics.userRating);
-          const userReviewData = data.data.reviews?.find(
-            (review) => review.user_id === user?.id
-          );
-          if (userReviewData) {
-            setUserReview(userReviewData.review);
-          }
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 2 * 60 * 1000, // 2 minutes cache
+    onSuccess: (data) => {
+      if (data?.data?.statistics?.userHasReviewed) {
+        setUserRating(data.data.statistics.userRating);
+        const userReviewData = data.data.reviews?.find(
+          (review) => review.user_id === user?.id
+        );
+        if (userReviewData) {
+          setUserReview(userReviewData.review);
         }
       }
-    } catch (error) {
-      console.error('Error fetching reviews:', error);
-      toast.error(`Failed to get reviews: ${error.message}`);
-    } finally {
-      setLoadingReviews(false);
-    }
-  }, [getToken, BACKEND_URL, user?.id]);
+    },
+  });
 
-  const fetchData = useCallback(async () => {
-    try {
-      setErrorGettingData('');
-      setLoadingData(true);
-      const token = await getToken();
+  const reviews = reviewsData?.data || {};
 
-      const axiosConfig = {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 20000,
-      };
-
-      const [creationsResponse, reviewsResponse] = await Promise.allSettled([
-        axios.post(
-          `${BACKEND_URL}/api/user/published-creations`,
-          { language: isRTL ? 'Arabic' : 'English' },
-          axiosConfig
-        ),
-        axios.get(`${BACKEND_URL}/api/user/all-reviews`, axiosConfig),
-      ]);
-
-      // Handle creations response
-      if (
-        creationsResponse.status === 'fulfilled' &&
-        creationsResponse.value.data.status === 'success'
-      ) {
-        setCreations(creationsResponse.value.data.creations);
-      } else if (creationsResponse.status === 'rejected') {
-        console.error('Failed to fetch creations:', creationsResponse.reason);
-        setErrorGettingData(
-          `Failed to get creations: ${creationsResponse.reason.message}`
-        );
-        toast.error(
-          `Failed to get creations: ${creationsResponse.reason.message}`
-        );
-      }
-
-      // Handle reviews response
-      if (
-        reviewsResponse.status === 'fulfilled' &&
-        reviewsResponse.value.data.status === 'success'
-      ) {
-        setReviews(reviewsResponse.value.data.data || {});
-
-        // Update user rating and review if they exist
-        if (reviewsResponse.value.data.data?.statistics?.userHasReviewed) {
-          setUserRating(reviewsResponse.value.data.data.statistics.userRating);
-          const userReviewData = reviewsResponse.value.data.data.reviews?.find(
-            (review) => review.user_id === user?.id
-          );
-          if (userReviewData) {
-            setUserReview(userReviewData.review);
-          }
-        }
-      } else if (reviewsResponse.status === 'rejected') {
-        console.error('Failed to fetch reviews:', reviewsResponse.reason);
-      }
-    } catch (error) {
-      console.error('Unexpected error in fetchData:', error);
-      toast.error(`Failed to get data: ${error.message}`);
-      setErrorGettingData(error.message);
-    } finally {
-      setLoadingData(false);
-    }
-  }, [getToken, BACKEND_URL, isRTL, user?.id]);
-
-  const handleToggleLike = async (id) => {
-    try {
-      // Optimistically update the UI first
-      setCreations((prevCreations) =>
-        prevCreations.map((creation) => {
-          if (creation.id === id) {
-            const isCurrentlyLiked = creation.likes.includes(user.id);
-            return {
-              ...creation,
-              likes: isCurrentlyLiked
-                ? creation.likes.filter((likeId) => likeId !== user.id)
-                : [...creation.likes, user.id],
-            };
-          }
-          return creation;
-        })
-      );
-
+  // Toggle like mutation with optimistic updates
+  const toggleLikeMutation = useMutation({
+    mutationFn: async (id) => {
       const token = await getToken();
       const { data } = await axios.post(
         `${BACKEND_URL}/api/user/toggle-liked`,
@@ -150,41 +98,67 @@ const Community = () => {
           timeout: 12000,
         }
       );
+      return { data, id };
+    },
+    onMutate: async (id) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.CREATIONS });
 
+      // Snapshot the previous value
+      const previousCreations = queryClient.getQueryData([
+        ...QUERY_KEYS.CREATIONS,
+        isRTL ? 'ar' : 'en',
+      ]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        [...QUERY_KEYS.CREATIONS, isRTL ? 'ar' : 'en'],
+        (old) => {
+          if (!old?.creations) return old;
+          return {
+            ...old,
+            creations: old.creations.map((creation) => {
+              if (creation.id === id) {
+                const isCurrentlyLiked = creation.likes.includes(user.id);
+                return {
+                  ...creation,
+                  likes: isCurrentlyLiked
+                    ? creation.likes.filter((likeId) => likeId !== user.id)
+                    : [...creation.likes, user.id],
+                };
+              }
+              return creation;
+            }),
+          };
+        }
+      );
+
+      return { previousCreations };
+    },
+    onError: (err, id, context) => {
+      // Rollback on error
+      queryClient.setQueryData(
+        [...QUERY_KEYS.CREATIONS, isRTL ? 'ar' : 'en'],
+        context.previousCreations
+      );
+      toast.error(`Failed to toggle like: ${err.message}`);
+    },
+    onSuccess: ({ data }) => {
       if (data.status === 'success') {
         toast.success(data.message);
       }
-    } catch (error) {
-      // Revert the optimistic update
-      setCreations((prevCreations) =>
-        prevCreations.map((creation) => {
-          if (creation.id === id) {
-            const isCurrentlyLiked = creation.likes.includes(user.id);
-            return {
-              ...creation,
-              likes: isCurrentlyLiked
-                ? [...creation.likes, user.id]
-                : creation.likes.filter((likeId) => likeId !== user.id),
-            };
-          }
-          return creation;
-        })
-      );
+    },
+  });
 
-      toast.error(`Failed to toggle like: ${error.message}`);
-      console.error('Error toggling like:', error);
-    }
+  const handleToggleLike = (id) => {
+    toggleLikeMutation.mutate(id);
   };
 
-  const handleRate = async (rating, review) => {
-    if (submittingReview) return;
-
-    setSubmittingReview(true);
-    setErrorRating('');
-
-    try {
+  // Submit review mutation
+  const submitReviewMutation = useMutation({
+    mutationFn: async ({ rating, review }) => {
       const token = await getToken();
-
+      setIsSubmittingReview(true);
       const { data } = await axios.post(
         `${BACKEND_URL}/api/user/add-review`,
         { review, rating },
@@ -193,57 +167,40 @@ const Community = () => {
           timeout: 20000,
         }
       );
-      console.log(data);
+      return data;
+    },
+    onSuccess: (data) => {
       if (data.status === 'success') {
         toast.success(data.message || 'Review submitted successfully!');
 
-        // Update local state immediately for better UX
-        setUserRating(rating);
-        setUserReview(review);
+        // Invalidate and refetch reviews
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.REVIEWS });
 
-        // Update reviews state to reflect the new review
-
-        fetchReviews();
-
-        // Close modal
         setIsRatingModalOpen(false);
+        setErrorRating('');
+        setIsSubmittingReview(false);
       }
-    } catch (error) {
+    },
+    onError: (error) => {
       const errorMessage =
         error.response?.data?.message ||
         error.message ||
         'Failed to submit review';
       toast.error(errorMessage);
-      console.error('Error submitting review:', error);
       setErrorRating(errorMessage);
-    } finally {
-      setSubmittingReview(false);
-    }
+      setIsSubmittingReview(false);
+    },
+  });
+
+  const handleRate = async (rating, review) => {
+    submitReviewMutation.mutate({ rating, review });
   };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function getData() {
-      if (isMounted) {
-        await fetchData();
-      }
-    }
-
-    if (user && isMounted) {
-      getData();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, fetchData]);
 
   const handleRetry = () => {
-    if (user) {
-      fetchData();
-    }
+    refetchData();
   };
+
+  // Remove the useEffect since React Query handles fetching automatically
 
   return (
     <div className="flex-1 h-full w-full flex flex-col items-center gap-4 p-6 mt-12 md:mt-0">
@@ -417,10 +374,10 @@ const Community = () => {
           <div className="flex items-center justify-center mb-8">
             <button
               onClick={() => setIsRatingModalOpen(true)}
-              disabled={submittingReview}
+              disabled={isSubmittingReview}
               className="bg-black-light cursor-pointer text-white/60 px-6 py-3 rounded-lg border border-white/60 hover:border-white/80 hover:text-white/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submittingReview
+              {isSubmittingReview
                 ? `${isRTL ? 'يتم رفع تقييمك...' : 'Submitting...'}`
                 : `${t('community.rateBtn')}`}
             </button>
@@ -440,7 +397,7 @@ const Community = () => {
             onError={setErrorRating}
             error={errorRating}
             user={user}
-            isSubmitting={submittingReview}
+            isSubmitting={isSubmittingReview}
           />
         )}
 

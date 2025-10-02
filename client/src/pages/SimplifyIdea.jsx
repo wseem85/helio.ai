@@ -70,6 +70,7 @@ const SimplifyIdea = () => {
       const token = await getToken();
 
       console.log('Sending request with language:', currentLanguage);
+      console.log('token:', token);
 
       const { data } = await axios.post(
         BACKEND_URL + '/api/ai/simplify-idea',

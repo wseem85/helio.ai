@@ -298,7 +298,7 @@ const simplifyIdea = async (req, res) => {
 
     // Create language-aware system prompt
     const languageInstruction = isArabic
-      ? 'يجب أن تكون إجابتك باللغة العربية فقط.'
+      ? ' يجب أن تكون إجابتك باللغة العربية فقط, استخدم الفصحى العصرية و يمكن استخدام بعض الكلمات العامية الدارجة.'
       : 'Your response must be in English only.';
 
     const systemPrompt = `You are an expert communicator who can explain complex ideas to different audiences. ${categoryPrompts[selectedCategory]}
