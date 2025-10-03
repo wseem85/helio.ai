@@ -5,7 +5,7 @@ const pdf = require('pdf-parse/lib/pdf-parse.js');
 const { clerkClient } = require('@clerk/express');
 const { default: axios } = require('axios');
 const cloudinary = require('cloudinary').v2;
-
+const { translateArabicToEnglish } = require('../utils/translation.js');
 const openai = new OpenAI({
   apiKey: process.env.GEMINI_API_KEY,
   baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
@@ -386,6 +386,11 @@ const generateImage = async (req, res) => {
           : 'Sorry, Generating Images only supported on Premium subscriptions, Please subscribe to Premium plan to continue',
       });
     }
+    let finalPrompt = prompt;
+    if (isArabic) {
+      console.log('Detected Arabic prompt, translating to English...');
+      finalPrompt = await translateArabicToEnglish(prompt);
+    }
     const styleEnhancements = {
       Realistic: 'photorealistic, high quality, detailed',
       'Ghibli style':
@@ -397,9 +402,9 @@ const generateImage = async (req, res) => {
       'Portrait style':
         'portrait photography, professional lighting, detailed face',
     };
-    let enhancedPrompt = prompt;
+    let enhancedPrompt = finalPrompt;
     if (style && styleEnhancements[style]) {
-      enhancedPrompt = `${prompt}, ${styleEnhancements[style]}`;
+      enhancedPrompt = `${finalPrompt}, ${styleEnhancements[style]}`;
     }
 
     // Generating the image
