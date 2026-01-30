@@ -1,4 +1,3 @@
-const OpenAI = require('openai');
 const sql = require('../config/db.js');
 const fs = require('fs');
 const pdf = require('pdf-parse/lib/pdf-parse.js');
@@ -6,10 +5,11 @@ const { clerkClient } = require('@clerk/express');
 const { default: axios } = require('axios');
 const cloudinary = require('cloudinary').v2;
 const { translateArabicToEnglish } = require('../utils/translation.js');
-const openai = new OpenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-});
+
+// Correct Gemini configuration - replace OpenAI SDK with Google AI SDK
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 const ideaCategories = [
   'Child',
   'Teenager',
@@ -19,15 +19,16 @@ const ideaCategories = [
   'Professional',
   'Expert',
 ];
+
 const generateArticle = async (req, res) => {
   const userId = req.userId;
-  const { prompt, length, language } = req.body; // Add language parameter
+  const { prompt, length, language } = req.body;
   const plan = req.plan;
   const free_usage = req.free_usage;
 
   const isArabic = language === 'ar';
   try {
-    // Validation
+    // Validation (unchanged)
     if (!prompt || !length) {
       return res.status(400).json({
         status: 'error',
@@ -49,21 +50,21 @@ const generateArticle = async (req, res) => {
     // Determine response language
     const responseLanguage = isArabic ? 'Arabic' : 'English';
 
-    // Simplified token calculation - be more generous with tokens
+    // Simplified token calculation (unchanged)
     let maxTokens;
     if (length <= 600) {
-      maxTokens = 2000; // Short articles
+      maxTokens = 2000;
     } else if (length <= 1000) {
-      maxTokens = 3500; // Medium articles
+      maxTokens = 3500;
     } else {
-      maxTokens = 5000; // Long articles
+      maxTokens = 5000;
     }
 
     console.log(
-      `Generating article - Target: ${length} words, Max tokens: ${maxTokens}, Language: ${responseLanguage}`
+      `Generating article - Target: ${length} words, Max tokens: ${maxTokens}, Language: ${responseLanguage}`,
     );
 
-    // Language-aware prompts
+    // Language-aware prompts (unchanged)
     const systemPrompt = isArabic
       ? `أنت كاتب محتوى محترف. أنشئ مقالات كاملة ومنظمة جيدًا تحتوي على:
 - عنوان واضح ومقدمة
@@ -102,41 +103,44 @@ Structure it with:
 
 Make sure the article is complete and informative.`;
 
-    // API call with better error handling
-    let response;
+    // API call with Gemini SDK
+    let content;
     let lastError;
 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         console.log(`Article generation attempt ${attempt}/3`);
 
-        response = await openai.chat.completions.create({
+        // Configure Gemini model
+        const model = genAI.getGenerativeModel({
           model: 'gemini-2.0-flash',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt,
-            },
-            {
-              role: 'user',
-              content: userPrompt,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: maxTokens,
-          top_p: 0.9,
+          generationConfig: {
+            maxOutputTokens: maxTokens,
+            temperature: 0.7,
+            topP: 0.9,
+          },
         });
 
+        // Combine prompts for Gemini
+        const combinedPrompt = `${systemPrompt}\n\n${userPrompt}`;
+        const result = await model.generateContent(combinedPrompt);
+        content = result.response.text();
+
         console.log('Article generation successful');
-        break;
+        break; // Exit retry loop on success
       } catch (apiError) {
         lastError = apiError;
         console.error(`Attempt ${attempt} failed:`, {
           message: apiError.message,
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
+          status: apiError.status,
+          statusText: apiError.statusText,
         });
-
+        if (apiError.status === 429) {
+          console.log(
+            'Rate limit hit. Breaking retry loop to avoid quota burn.',
+          );
+          break; // Exit the retry loop immediately
+        }
         if (attempt === 3) {
           return res.status(500).json({
             status: 'error',
@@ -153,13 +157,7 @@ Make sure the article is complete and informative.`;
       }
     }
 
-    if (
-      !response ||
-      !response.choices ||
-      !response.choices[0] ||
-      !response.choices[0].message ||
-      !response.choices[0].message.content
-    ) {
+    if (!content) {
       return res.status(500).json({
         status: 'error',
         message: isArabic
@@ -168,22 +166,20 @@ Make sure the article is complete and informative.`;
       });
     }
 
-    let content = response.choices[0].message.content;
-
-    // Simple completeness check
+    // Simple completeness check (unchanged)
     const wordCount = content.trim().split(/\s+/).length;
     const endsProperlyPattern = /[.!?؟]\s*$/;
     const hasMinimumLength = wordCount >= length * 0.6;
     const endsProperlyFormatted = endsProperlyPattern.test(content.trim());
 
     console.log(
-      `Article generated - Words: ${wordCount}, Target: ${length}, Ends properly: ${endsProperlyFormatted}, Language: ${responseLanguage}`
+      `Article generated - Words: ${wordCount}, Target: ${length}, Ends properly: ${endsProperlyFormatted}, Language: ${responseLanguage}`,
     );
 
-    // Save to database
+    // Save to database (unchanged)
     await sql`INSERT INTO creations(user_id, prompt, content, type) VALUES(${userId}, ${prompt}, ${content}, 'article')`;
 
-    // Update free usage if not premium
+    // Update free usage if not premium (unchanged)
     if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
@@ -223,9 +219,11 @@ Make sure the article is complete and informative.`;
   }
 };
 
+// Other controller functions remain structurally the same, but need similar Gemini SDK updates
+
 const simplifyIdea = async (req, res) => {
   const userId = req.userId;
-  const { selectedCategory, subject, language } = req.body; // Add language parameter
+  const { selectedCategory, subject, language } = req.body;
   const plan = req.plan;
   const isArabic = language === 'ar';
   const free_usage = req.free_usage;
@@ -246,10 +244,10 @@ const simplifyIdea = async (req, res) => {
         status: 'error',
         message: isArabic
           ? `فئة عمرية غير صالحة، يجب أن تكون واحدة من: ${ideaCategories.join(
-              ', '
+              ', ',
             )}`
           : `Invalid Age Category, Must be one of: ${ideaCategories.join(
-              ', '
+              ', ',
             )}`,
       });
     }
@@ -266,7 +264,7 @@ const simplifyIdea = async (req, res) => {
     // Determine response language
     const responseLanguage = isArabic ? 'Arabic' : 'English';
 
-    // Enhanced category prompts with language support
+    // Enhanced category prompts with language support (unchanged)
     const categoryPrompts = {
       Child: isArabic
         ? 'اشرح هذا الموضوع كما لو كنت تشرح لطفل فضولي عمره 8 سنوات. استخدم كلمات بسيطة وأمثلة ممتعة، وربما قارنه بأشياء يعرفها الطفل مثل الألعاب أو الألوان أو الحيوانات.'
@@ -312,30 +310,24 @@ const simplifyIdea = async (req, res) => {
       ? `من فضلك اشرح: ${subject}`
       : `Please explain: ${subject}`;
 
-    // Enhanced API call with language consideration
-    const response = await openai.chat.completions.create({
+    // Gemini API call (updated)
+    const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
-      messages: [
-        {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: userPrompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 1500, // Increased for better explanations
-      top_p: 0.9,
+      generationConfig: {
+        maxOutputTokens: 1500,
+        temperature: 0.7,
+        topP: 0.9,
+      },
     });
 
-    const content = response.choices[0].message.content;
+    const combinedPrompt = `${systemPrompt}\n\n${userPrompt}`;
+    const result = await model.generateContent(combinedPrompt);
+    const content = result.response.text();
 
-    // Save to database
+    // Save to database (unchanged)
     await sql`INSERT INTO creations(user_id,prompt,content,type) VALUES(${userId},${subject},${content},'simplified_idea')`;
 
-    // Update free usages
+    // Update free usages (unchanged)
     if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
@@ -421,13 +413,13 @@ const generateImage = async (req, res) => {
           'x-api-key': process.env.CLIPDROP_API_KEY,
         },
         responseType: 'arraybuffer',
-      }
+      },
     );
     // we get image as binary , still need somewhere to save , so we will save it as Buffer
     // then convert it into string to send it later to the cloud
     const base64Image = `data:image/png;base64,${Buffer.from(
       data,
-      'binary'
+      'binary',
     ).toString('base64')}`;
 
     // uploading image to cloudinary
@@ -459,7 +451,7 @@ const generateImage = async (req, res) => {
     });
   }
 };
-// Removebackground API
+
 const removeBackground = async (req, res) => {
   const userId = req.userId;
   const image = req.file;
@@ -503,10 +495,10 @@ const removeBackground = async (req, res) => {
           ...form.getHeaders(),
         },
         responseType: 'arraybuffer',
-      }
+      },
     );
     const base64Image = `data:image/png;base64,${Buffer.from(
-      response.data
+      response.data,
     ).toString('base64')}`;
     const { secure_url } = await cloudinary.uploader.upload(base64Image, {
       resource_type: 'image',
@@ -589,41 +581,42 @@ const transformContent = async (req, res) => {
         ? `حول هذا المحتوى إلى نص/وصف لفيديو تيك توك. اجعله عصريًا، استخدم لغة فيرالية، أضف جاذبية، أضف هاشتاقات ومقترحات صوت مناسبة. اجعله قصيرًا وجذابًا ومُحسّنًا لمحتوى الفيديو. المحتوى المراد تحويله: "${content}"`
         : `Transform this content into a TikTok video script/caption. Make it trendy, use viral language, include hooks, add relevant hashtags and sound suggestions. Keep it short, engaging and optimized for video content. Content to transform: "${content}"`,
     };
-    let response;
+    let result;
     // Generate content for each selected platform
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        console.log(`Article generation attempt ${attempt}/3`);
-        response = await openai.chat.completions.create({
+        console.log(`Content transformation attempt ${attempt}/3`);
+
+        // Configure Gemini model
+        const model = genAI.getGenerativeModel({
           model: 'gemini-2.0-flash',
-          messages: [
-            {
-              role: 'system',
-              content: isArabic
-                ? `أنت مدير وسائل تواصل اجتماعي خبير متخصص في إنشاء محتوى ${platform}. أنشئ محتوى جذابًا ومُحسنًا للمنصة يلقى صدى لدى الجمهور المستهدف.`
-                : `You are an expert social media manager specializing in ${platform} content creation. Create engaging, platform-optimized content that resonates with the target audience.`,
-            },
-            {
-              role: 'user',
-              content: platformPrompts[platform],
-            },
-          ],
-          temperature: 0.8, // Slightly higher temperature for creative variations
-          max_tokens: 800,
-          top_p: 0.9,
+          generationConfig: {
+            maxOutputTokens: 800,
+            temperature: 0.8,
+            topP: 0.9,
+          },
         });
-        console.log('Article generation successful');
+
+        const systemInstruction = isArabic
+          ? `أنت مدير وسائل تواصل اجتماعي خبير متخصص في إنشاء محتوى ${platform}. أنشئ محتوى جذابًا ومُحسنًا للمنصة يلقى صدى لدى الجمهور المستهدف.`
+          : `You are an expert social media manager specializing in ${platform} content creation. Create engaging, platform-optimized content that resonates with the target audience.`;
+
+        const combinedPrompt = `${systemInstruction}\n\n${platformPrompts[platform]}`;
+        const response = await model.generateContent(combinedPrompt);
+        result = response.response.text();
+
+        console.log('Content transformation successful');
         break;
       } catch (apiError) {
         console.error(`Attempt ${attempt} failed:`, {
           message: apiError.message,
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
+          status: apiError.status,
+          statusText: apiError.statusText,
         });
 
         if (attempt === 3) {
           throw new Error(
-            `Failed after 3 attempts. Last error: ${apiError.message}`
+            `Failed after 3 attempts. Last error: ${apiError.message}`,
           );
         }
 
@@ -633,12 +626,7 @@ const transformContent = async (req, res) => {
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
-    if (
-      !response ||
-      !response.choices ||
-      !response.choices[0] ||
-      !response.choices[0].message
-    ) {
+    if (!result) {
       return res.status(500).json({
         status: 'error',
         message: isArabic
@@ -646,19 +634,16 @@ const transformContent = async (req, res) => {
           : 'AI API failed to response try again',
       });
     }
-    const result = response.choices[0].message.content;
 
     const type = `content_transform_${platform}`;
 
     await sql`INSERT INTO creations(user_id, prompt, content, type) VALUES(${userId}, ${content}, ${result}, ${type})`;
 
-    // Save each transformation to database
-
     // Update free usage for non-premium users
     if (plan !== 'premium') {
       await clerkClient.users.updateUserMetadata(userId, {
         privateMetadata: {
-          free_usage: free_usage + 1, // Count as one usage regardless of platform count
+          free_usage: free_usage + 1,
         },
       });
     }
@@ -769,19 +754,20 @@ const reviewResume = async (req, res) => {
 **Important:** The response must be entirely in English.
 
 Resume to review:\n\n${pdfData.text}`;
-    const response = await openai.chat.completions.create({
+
+    // Gemini API call
+    const model = genAI.getGenerativeModel({
       model: 'gemini-2.0-flash',
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 800,
-      top_p: 0.9,
+      generationConfig: {
+        maxOutputTokens: 800,
+        temperature: 0.7,
+        topP: 0.9,
+      },
     });
-    const content = response.choices[0].message.content;
+
+    const result = await model.generateContent(prompt);
+    const content = result.response.text();
+
     // save to database
     await sql`INSERT INTO creations(user_id, prompt,content,type) VALUES(${userId},'Review This Resume',${content},'resume_review')`;
     // in case user has free plan we need to update usages on clerk
