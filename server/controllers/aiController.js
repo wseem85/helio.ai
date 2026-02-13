@@ -6,9 +6,9 @@ const { default: axios } = require('axios');
 const cloudinary = require('cloudinary').v2;
 const { translateArabicToEnglish } = require('../utils/translation.js');
 
-// Correct Gemini configuration - replace OpenAI SDK with Google AI SDK
-const { GoogleGenerativeAI } = require('@google/generative-ai');
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Groq configuration - replace Gemini
+const Groq = require('groq-sdk');
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const ideaCategories = [
   'Child',
@@ -19,6 +19,50 @@ const ideaCategories = [
   'Professional',
   'Expert',
 ];
+
+// Groq API call helper with retry logic
+async function callGroqAPI(
+  systemPrompt,
+  userPrompt,
+  maxTokens,
+  temperature = 0.7,
+  retries = 3,
+) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Groq API attempt ${attempt}/${retries}`);
+
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        model: 'llama-3.1-8b-instant', // Free tier, fast, 8K context
+        max_tokens: maxTokens,
+        temperature: temperature,
+        top_p: 0.9,
+      });
+
+      const content = chatCompletion.choices[0].message.content;
+      console.log('Groq API call successful');
+      return content;
+    } catch (apiError) {
+      console.error(`Attempt ${attempt} failed:`, {
+        message: apiError.message,
+        errorType: apiError.name,
+      });
+
+      if (attempt === retries) {
+        throw apiError;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s
+      const waitTime = Math.pow(2, attempt - 1) * 1000;
+      console.log(`Waiting ${waitTime}ms before retry...`);
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
+    }
+  }
+}
 
 const generateArticle = async (req, res) => {
   const userId = req.userId;
@@ -103,58 +147,17 @@ Structure it with:
 
 Make sure the article is complete and informative.`;
 
-    // API call with Gemini SDK
+    // API call with Groq (replaces Gemini)
     let content;
-    let lastError;
-
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        console.log(`Article generation attempt ${attempt}/3`);
-
-        // Configure Gemini model
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
-          generationConfig: {
-            maxOutputTokens: maxTokens,
-            temperature: 0.7,
-            topP: 0.9,
-          },
-        });
-
-        // Combine prompts for Gemini
-        const combinedPrompt = `${systemPrompt}\n\n${userPrompt}`;
-        const result = await model.generateContent(combinedPrompt);
-        content = result.response.text();
-
-        console.log('Article generation successful');
-        break; // Exit retry loop on success
-      } catch (apiError) {
-        lastError = apiError;
-        console.error(`Attempt ${attempt} failed:`, {
-          message: apiError.message,
-          status: apiError.status,
-          statusText: apiError.statusText,
-        });
-        if (apiError.status === 429) {
-          console.log(
-            'Rate limit hit. Breaking retry loop to avoid quota burn.',
-          );
-          break; // Exit the retry loop immediately
-        }
-        if (attempt === 3) {
-          return res.status(500).json({
-            status: 'error',
-            message: isArabic
-              ? `فشلت العملية بعد 3 محاولات. الخطأ الأخير: ${apiError.message}`
-              : `Failed after 3 attempts. Last error: ${apiError.message}`,
-          });
-        }
-
-        // Wait before retry (1s, 2s, 4s)
-        const waitTime = Math.pow(2, attempt - 1) * 1000;
-        console.log(`Waiting ${waitTime}ms before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-      }
+    try {
+      content = await callGroqAPI(systemPrompt, userPrompt, maxTokens, 0.7, 3);
+    } catch (lastError) {
+      return res.status(500).json({
+        status: 'error',
+        message: isArabic
+          ? `فشلت العملية بعد 3 محاولات. الخطأ الأخير: ${lastError.message}`
+          : `Failed after 3 attempts. Last error: ${lastError.message}`,
+      });
     }
 
     if (!content) {
@@ -169,7 +172,6 @@ Make sure the article is complete and informative.`;
     // Simple completeness check (unchanged)
     const wordCount = content.trim().split(/\s+/).length;
     const endsProperlyPattern = /[.!?؟]\s*$/;
-    const hasMinimumLength = wordCount >= length * 0.6;
     const endsProperlyFormatted = endsProperlyPattern.test(content.trim());
 
     console.log(
@@ -218,8 +220,6 @@ Make sure the article is complete and informative.`;
     });
   }
 };
-
-// Other controller functions remain structurally the same, but need similar Gemini SDK updates
 
 const simplifyIdea = async (req, res) => {
   const userId = req.userId;
@@ -310,19 +310,18 @@ const simplifyIdea = async (req, res) => {
       ? `من فضلك اشرح: ${subject}`
       : `Please explain: ${subject}`;
 
-    // Gemini API call (updated)
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        maxOutputTokens: 1500,
-        temperature: 0.7,
-        topP: 0.9,
-      },
-    });
-
-    const combinedPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    const result = await model.generateContent(combinedPrompt);
-    const content = result.response.text();
+    // Groq API call (replaces Gemini)
+    let content;
+    try {
+      content = await callGroqAPI(systemPrompt, userPrompt, 1500, 0.7, 3);
+    } catch (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: isArabic
+          ? `فشلت العملية: ${error.message}`
+          : `Operation failed: ${error.message}`,
+      });
+    }
 
     // Save to database (unchanged)
     await sql`INSERT INTO creations(user_id,prompt,content,type) VALUES(${userId},${subject},${content},'simplified_idea')`;
@@ -406,7 +405,7 @@ const generateImage = async (req, res) => {
     form.append('prompt', enhancedPrompt);
     // form.append('image_file', image);
     const { data } = await axios.post(
-      'https://clipdrop-api.co/text-to-image/v1',
+      'https://clipdrop-api.co/text-to-image/v1  ',
       form,
       {
         headers: {
@@ -487,7 +486,7 @@ const removeBackground = async (req, res) => {
     });
     form.append('size', 'auto');
     const response = await axios.post(
-      'https://api.remove.bg/v1.0/removebg',
+      'https://api.remove.bg/v1.0/removebg  ',
       form,
       {
         headers: {
@@ -581,52 +580,21 @@ const transformContent = async (req, res) => {
         ? `حول هذا المحتوى إلى نص/وصف لفيديو تيك توك. اجعله عصريًا، استخدم لغة فيرالية، أضف جاذبية، أضف هاشتاقات ومقترحات صوت مناسبة. اجعله قصيرًا وجذابًا ومُحسّنًا لمحتوى الفيديو. المحتوى المراد تحويله: "${content}"`
         : `Transform this content into a TikTok video script/caption. Make it trendy, use viral language, include hooks, add relevant hashtags and sound suggestions. Keep it short, engaging and optimized for video content. Content to transform: "${content}"`,
     };
+
     let result;
-    // Generate content for each selected platform
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        console.log(`Content transformation attempt ${attempt}/3`);
+    try {
+      const systemInstruction = isArabic
+        ? `أنت مدير وسائل تواصل اجتماعي خبير متخصص في إنشاء محتوى ${platform}. أنشئ محتوى جذابًا ومُحسنًا للمنصة يلقى صدى لدى الجمهور المستهدف.`
+        : `You are an expert social media manager specializing in ${platform} content creation. Create engaging, platform-optimized content that resonates with the target audience.`;
 
-        // Configure Gemini model
-        const model = genAI.getGenerativeModel({
-          model: 'gemini-2.0-flash',
-          generationConfig: {
-            maxOutputTokens: 800,
-            temperature: 0.8,
-            topP: 0.9,
-          },
-        });
-
-        const systemInstruction = isArabic
-          ? `أنت مدير وسائل تواصل اجتماعي خبير متخصص في إنشاء محتوى ${platform}. أنشئ محتوى جذابًا ومُحسنًا للمنصة يلقى صدى لدى الجمهور المستهدف.`
-          : `You are an expert social media manager specializing in ${platform} content creation. Create engaging, platform-optimized content that resonates with the target audience.`;
-
-        const combinedPrompt = `${systemInstruction}\n\n${platformPrompts[platform]}`;
-        const response = await model.generateContent(combinedPrompt);
-        result = response.response.text();
-
-        console.log('Content transformation successful');
-        break;
-      } catch (apiError) {
-        console.error(`Attempt ${attempt} failed:`, {
-          message: apiError.message,
-          status: apiError.status,
-          statusText: apiError.statusText,
-        });
-
-        if (attempt === 3) {
-          throw new Error(
-            `Failed after 3 attempts. Last error: ${apiError.message}`,
-          );
-        }
-
-        // Wait before retry (1s, 2s, 4s)
-        const waitTime = Math.pow(2, attempt - 1) * 1000;
-        console.log(`Waiting ${waitTime}ms before retry...`);
-        await new Promise((resolve) => setTimeout(resolve, waitTime));
-      }
-    }
-    if (!result) {
+      result = await callGroqAPI(
+        systemInstruction,
+        platformPrompts[platform],
+        800,
+        0.8,
+        3,
+      );
+    } catch (error) {
       return res.status(500).json({
         status: 'error',
         message: isArabic
@@ -691,7 +659,11 @@ const reviewResume = async (req, res) => {
     }
     const dataBuffer = fs.readFileSync(resume.path);
     const pdfData = await pdf(dataBuffer);
-    const prompt = isArabic
+    const systemPrompt = isArabic
+      ? `أنت خبير في كتابة السير الذاتية ومراجعتها. قم بمراجعة شاملة لهذه السيرة الذاتية وقدم تقييمًا مفصلاً وفق المعايير المطلوبة. يجب أن يكون الرد باللغة العربية بالكامل.`
+      : `You are an expert resume writer and reviewer. Conduct a comprehensive review of this resume and provide a detailed evaluation based on the requested criteria. The response must be entirely in English.`;
+
+    const userPrompt = isArabic
       ? `قم بمراجعة شاملة لهذه السيرة الذاتية وقم بتقييمها من 10 بناءً على:
   
 🎯 **التأثير والوضوح** (30%):
@@ -755,18 +727,18 @@ const reviewResume = async (req, res) => {
 
 Resume to review:\n\n${pdfData.text}`;
 
-    // Gemini API call
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.0-flash',
-      generationConfig: {
-        maxOutputTokens: 800,
-        temperature: 0.7,
-        topP: 0.9,
-      },
-    });
-
-    const result = await model.generateContent(prompt);
-    const content = result.response.text();
+    // Groq API call (replaces Gemini)
+    let content;
+    try {
+      content = await callGroqAPI(systemPrompt, userPrompt, 800, 0.7, 3);
+    } catch (error) {
+      return res.status(400).json({
+        status: 'error',
+        message: isArabic
+          ? `فشلت العملية: ${error.message}`
+          : `Operation failed: ${error.message}`,
+      });
+    }
 
     // save to database
     await sql`INSERT INTO creations(user_id, prompt,content,type) VALUES(${userId},'Review This Resume',${content},'resume_review')`;
