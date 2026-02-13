@@ -41,34 +41,36 @@ const GenerateArticle = () => {
 
       const token = await getToken();
 
-      console.log('Generating article with language:', isRTL ? 'ar' : 'en');
-
       const { data } = await axios.post(
         BACKEND_URL + '/api/ai/generate-article',
         {
           prompt: articleTopic,
           length: articleLength,
-          language: isRTL ? 'ar' : 'en', // Send language based on current locale
+          language: isRTL ? 'ar' : 'en',
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (data.status === 'success') {
-        console.log('Article generated in language:', data.metadata?.language);
         setResponse(data.content);
+        setArticleTopic('');
       }
     } catch (err) {
-      console.log(err);
       if (err.response?.data?.message) {
         setErrorGenerating(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        setErrorGenerating(err.message);
+        setErrorGenerating(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
+        toast.error(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
       }
-      toast.error(err.message);
     } finally {
       setIsGenerating(false);
     }

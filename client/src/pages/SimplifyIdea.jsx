@@ -60,7 +60,7 @@ const SimplifyIdea = () => {
     try {
       if (!subject || !selectedCategory) {
         toast.error(
-          'Please provide a subject and select a category to continue'
+          'Please provide a subject and select a category to continue',
         );
         return;
       }
@@ -69,9 +69,6 @@ const SimplifyIdea = () => {
       setIsGenerating(true);
 
       const token = await getToken();
-
-      console.log('Sending request with language:', currentLanguage);
-      console.log('token:', token);
 
       const { data } = await axios.post(
         BACKEND_URL + '/api/ai/simplify-idea',
@@ -84,21 +81,24 @@ const SimplifyIdea = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (data.status === 'success') {
-        console.log('Response received in language:', data.language);
         setResponse(data.content);
       }
     } catch (err) {
-      console.log(err);
       if (err.response?.data?.message) {
         setErrorGenerating(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        setErrorGenerating(err.message);
+        setErrorGenerating(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
+        toast.error(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
       }
-      toast.error(err.message);
     } finally {
       setIsGenerating(false);
     }

@@ -14,7 +14,7 @@ const Home = () => {
   const imageUrl =
     window.location.hostname === 'localhost'
       ? '/helio-og-image.png'
-      : 'https://helio-ai-nu.vercel.app//helio-og-image.png';
+      : 'https://helio-ai-nu.vercel.app/helio-og-image.png';
   return (
     <div>
       <Helmet>

@@ -53,7 +53,7 @@ const GenerateImages = () => {
     try {
       if (!imageDescription || imageDescription.length < 10) {
         toast.error(
-          'Please provide a detailed description (at least 10 characters)'
+          'Please provide a detailed description (at least 10 characters)',
         );
         return;
       }
@@ -74,20 +74,22 @@ const GenerateImages = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       if (data.status === 'success') {
         setResponse(data.content);
       }
     } catch (err) {
-      console.log(err);
       if (err.response?.data?.message) {
         setErrorGenerating(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
         setErrorGenerating(err.message);
+        toast.error(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
       }
-      toast.error(err.message);
     } finally {
       setIsGenerating(false);
     }

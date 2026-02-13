@@ -39,20 +39,19 @@ const RemoveBackground = () => {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
           },
-        }
+        },
       );
 
       if (data.status === 'success') {
         setResponse(data.content);
       }
     } catch (err) {
-      console.log(err);
       if (err.response?.data?.message) {
         setErrorGenerating(err.response.data.message);
       } else {
         setErrorGenerating(err.message);
       }
-      toast.error(err.message);
+      toast.error(err.response?.data?.message ? err.response.data.message : 'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)');
     } finally {
       setIsGenerating(false);
     }

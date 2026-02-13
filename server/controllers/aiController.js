@@ -37,7 +37,7 @@ async function callGroqAPI(
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
         ],
-        model: 'llama-3.1-8b-instant', // Free tier, fast, 8K context
+        model: 'llama-3.1-8b-instant',
         max_tokens: maxTokens,
         temperature: temperature,
         top_p: 0.9,
@@ -228,8 +228,6 @@ const simplifyIdea = async (req, res) => {
   const isArabic = language === 'ar';
   const free_usage = req.free_usage;
   try {
-    console.log('reached the controller');
-
     if (!selectedCategory || !subject) {
       return res.status(400).json({
         status: 'error',

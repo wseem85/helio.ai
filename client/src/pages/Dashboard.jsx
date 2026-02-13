@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { dummyCreationData } from '../assets/assets';
 import { Gem, Sparkles } from 'lucide-react';
 import { Protect, useAuth, useUser } from '@clerk/clerk-react';
 import CreationItem from './CreationItem';
@@ -38,7 +37,7 @@ const Dashboard = () => {
             Authorization: `Bearer ${token}`,
           },
           timeout: 15000,
-        }
+        },
       );
 
       if (data.status === 'success') {
@@ -225,8 +224,8 @@ const Dashboard = () => {
                       ? 'عرض أقل'
                       : 'Show Less'
                     : isRTL
-                    ? 'عرض المزيد'
-                    : 'Show More'}
+                      ? 'عرض المزيد'
+                      : 'Show More'}
                 </button>
               </div>
             )}
@@ -240,7 +239,7 @@ const Dashboard = () => {
 export default Dashboard;
 
 // Skeleton component remains the same
-const DashboardSkeleton = ({ isRTL }) => {
+const DashboardSkeleton = () => {
   return (
     <div className="h-full space-y-8 max-h-screen p-6 mt-12 md:mt-0 animate-pulse">
       {/* User Info Skeleton */}

@@ -79,7 +79,6 @@ const ContentTransformer = () => {
       setIsGenerating(true);
 
       const token = await getToken();
-      4;
 
       const { data } = await axios.post(
         BACKEND_URL + '/api/ai/transform-content',
@@ -92,21 +91,24 @@ const ContentTransformer = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
-      console.log(data);
+
       if (data.status === 'success') {
-        console.log(data);
         setGeneratedPost({ platform: selectedPlatform, text: data.post });
       }
     } catch (err) {
-      console.log(err);
       if (err.response?.data?.message) {
         setErrorGenerating(err.response.data.message);
+        toast.error(err.response.data.message);
       } else {
-        setErrorGenerating(err.message);
+        setErrorGenerating(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
+        toast.error(
+          'Sorry! : It is just a free AI API, and could simply fails, you still have to hire me :)',
+        );
       }
-      toast.error(err.message);
     } finally {
       setIsGenerating(false);
     }
@@ -275,7 +277,7 @@ const ContentTransformer = () => {
                           {
                             platforms.find(
                               (p) =>
-                                p.id === generatedPost.platform.toLowerCase()
+                                p.id === generatedPost.platform.toLowerCase(),
                             )?.icon
                           }
                           <span className="text-sm font-medium text-brand">
