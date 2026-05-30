@@ -67,7 +67,7 @@ https://helio-ai-nu.vercel.app/
 
 ### Screenshots
 
-- [Home](/docs/images/helio1.jpeg)
-- [Tools](/docs/images/helio4.jpeg)
-- [Article](/docs/images/helio.jpeg)
-- [Community](/docs/images/helio3.jpeg)
+- ![Home](docs/images/helio1.jpeg)
+- ![Tools](/docs/images/helio4.jpeg)
+- ![Article](/docs/images/helio.jpeg)
+- ![Community](/docs/images/helio3.jpeg)
