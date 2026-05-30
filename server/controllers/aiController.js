@@ -47,6 +47,12 @@ const createProviderError = (provider, error) => {
   return providerError;
 };
 
+const safeUnlink = (filePath) => {
+  if (filePath && fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+};
+
 // Groq API call helper with retry logic
 async function callGroqAPI(
   systemPrompt,
@@ -527,6 +533,16 @@ const removeBackground = async (req, res) => {
           : 'Sorry, Removing Image Background only supported on Premium subscriptions',
       });
     }
+
+    if (!process.env.REMOVE_BG_API_KEY) {
+      return res.status(500).json({
+        status: 'error',
+        message: isArabic
+          ? 'مفتاح Remove.bg API غير موجود في إعدادات الخادم'
+          : 'Remove.bg API key is missing from server configuration',
+      });
+    }
+
     // Cloudinary removes background but it is not effiecient ,
     // there are a toll called cloudinary_ai but it is limitted
     //offers only 15 background removal on the free plan
@@ -534,29 +550,44 @@ const removeBackground = async (req, res) => {
     const form = new FormData();
     form.append('image_file', fs.createReadStream(image.path), {
       filename: image.originalname,
-      contentType: image.mimitype,
+      contentType: image.mimetype,
     });
     form.append('size', 'auto');
-    const response = await axios.post(
-      'https://api.remove.bg/v1.0/removebg  ',
-      form,
-      {
-        headers: {
-          'X-Api-Key': process.env.REMOVE_BG_API_KEY,
-          ...form.getHeaders(),
+    let imageBuffer;
+    try {
+      const response = await axios.post(
+        'https://api.remove.bg/v1.0/removebg',
+        form,
+        {
+          headers: {
+            'X-Api-Key': process.env.REMOVE_BG_API_KEY,
+            ...form.getHeaders(),
+          },
+          responseType: 'arraybuffer',
         },
-        responseType: 'arraybuffer',
-      },
-    );
+      );
+      imageBuffer = response.data;
+    } catch (error) {
+      throw createProviderError('Remove.bg background removal', error);
+    }
+
     const base64Image = `data:image/png;base64,${Buffer.from(
-      response.data,
+      imageBuffer,
     ).toString('base64')}`;
-    const { secure_url } = await cloudinary.uploader.upload(base64Image, {
-      resource_type: 'image',
-      format: 'png',
-    });
+
+    let secure_url;
+    try {
+      const uploadResult = await cloudinary.uploader.upload(base64Image, {
+        resource_type: 'image',
+        format: 'png',
+      });
+      secure_url = uploadResult.secure_url;
+    } catch (error) {
+      throw createProviderError('Cloudinary upload', error);
+    }
+
     //clearing temporary file
-    fs.unlinkSync(image.path);
+    safeUnlink(image.path);
     // insert into database
     await sql`INSERT INTO creations(user_id,prompt,content,type) VALUES(${userId},'remove image background',${secure_url},'background_removal')`;
     // update free usages
@@ -573,11 +604,15 @@ const removeBackground = async (req, res) => {
       content: secure_url,
     });
   } catch (error) {
-    res.status(400).json({
+    const providerMessage = getProviderErrorMessage(error);
+    console.log(providerMessage);
+    safeUnlink(image?.path);
+
+    res.status(error.statusCode || error.response?.status || 400).json({
       status: 'error',
       message: isArabic
-        ? `فشلت إزالة الخلفية: ${error.message}`
-        : `Background removal failed: ${error.message}`,
+        ? `فشلت إزالة الخلفية: ${providerMessage}`
+        : `Background removal failed: ${providerMessage}`,
     });
   }
 };
