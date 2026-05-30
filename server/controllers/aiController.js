@@ -4,6 +4,7 @@ const pdf = require('pdf-parse/lib/pdf-parse.js');
 const { clerkClient } = require('@clerk/express');
 const { default: axios } = require('axios');
 const cloudinary = require('cloudinary').v2;
+const FormData = require('form-data');
 const { translateArabicToEnglish } = require('../utils/translation.js');
 
 // Groq configuration - replace Gemini
@@ -19,6 +20,32 @@ const ideaCategories = [
   'Professional',
   'Expert',
 ];
+
+const getProviderErrorMessage = (error) => {
+  if (!error.response?.data) return error.message;
+
+  const responseData = Buffer.isBuffer(error.response.data)
+    ? error.response.data.toString('utf8')
+    : error.response.data;
+
+  if (typeof responseData === 'string') {
+    try {
+      return JSON.parse(responseData).error || responseData;
+    } catch {
+      return responseData;
+    }
+  }
+
+  return responseData.error || responseData.message || error.message;
+};
+
+const createProviderError = (provider, error) => {
+  const providerError = new Error(
+    `${provider} failed: ${getProviderErrorMessage(error)}`,
+  );
+  providerError.statusCode = error.response?.status || error.http_code || 400;
+  return providerError;
+};
 
 // Groq API call helper with retry logic
 async function callGroqAPI(
@@ -399,28 +426,55 @@ const generateImage = async (req, res) => {
     // Generating the image
     // openai does this but not for free
     // we will use Clipdrop api
+    if (!process.env.CLIPDROP_API_KEY) {
+      return res.status(500).json({
+        status: 'error',
+        message: isArabic
+          ? 'مفتاح Clipdrop API غير موجود في إعدادات الخادم'
+          : 'Clipdrop API key is missing from server configuration',
+      });
+    }
+
     const form = new FormData();
     form.append('prompt', enhancedPrompt);
     // form.append('image_file', image);
-    const { data } = await axios.post(
-      'https://clipdrop-api.co/text-to-image/v1  ',
-      form,
-      {
-        headers: {
-          'x-api-key': process.env.CLIPDROP_API_KEY,
+    let imageBuffer;
+    try {
+      const response = await axios.post(
+        'https://clipdrop-api.co/text-to-image/v1',
+        form,
+        {
+          headers: {
+            'x-api-key': process.env.CLIPDROP_API_KEY,
+            ...form.getHeaders(),
+          },
+          responseType: 'arraybuffer',
         },
-        responseType: 'arraybuffer',
-      },
-    );
+      );
+      console.log(
+        'Clipdrop credits remaining:',
+        response.headers['x-remaining-credits'],
+      );
+      imageBuffer = response.data;
+    } catch (error) {
+      throw createProviderError('Clipdrop image generation', error);
+    }
+
     // we get image as binary , still need somewhere to save , so we will save it as Buffer
     // then convert it into string to send it later to the cloud
     const base64Image = `data:image/png;base64,${Buffer.from(
-      data,
+      imageBuffer,
       'binary',
     ).toString('base64')}`;
 
     // uploading image to cloudinary
-    const { secure_url } = await cloudinary.uploader.upload(base64Image);
+    let secure_url;
+    try {
+      const uploadResult = await cloudinary.uploader.upload(base64Image);
+      secure_url = uploadResult.secure_url;
+    } catch (error) {
+      throw createProviderError('Cloudinary upload', error);
+    }
     // save creation into database
     await sql`INSERT INTO creations(user_id,prompt,content,type,publish) VALUES(${userId},${prompt},${secure_url},'image',${
       publish ?? false
@@ -439,12 +493,13 @@ const generateImage = async (req, res) => {
       content: secure_url,
     });
   } catch (error) {
-    console.log(error.message);
-    res.status(400).json({
+    const providerMessage = getProviderErrorMessage(error);
+    console.log(providerMessage);
+    res.status(error.statusCode || error.response?.status || 400).json({
       status: 'error',
       message: isArabic
-        ? `فشلت العملية: ${error.message}`
-        : `Operation failed: ${error.message}`,
+        ? `فشلت العملية: ${providerMessage}`
+        : `Operation failed: ${providerMessage}`,
     });
   }
 };
@@ -476,7 +531,6 @@ const removeBackground = async (req, res) => {
     // there are a toll called cloudinary_ai but it is limitted
     //offers only 15 background removal on the free plan
     // that is why we are going to use Remove.bg API
-    const FormData = require('form-data');
     const form = new FormData();
     form.append('image_file', fs.createReadStream(image.path), {
       filename: image.originalname,
