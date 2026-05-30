@@ -1,40 +1,73 @@
-# Helio AI 🌞
+# Helio AI
 
-A modern, AI-powered web application that provides intelligent chat interactions with a sleek, dark-themed interface.
+Helio AI is a production-focused SaaS platform that combines multiple AI-powered tools within a unified application.
 
-![Helio AI](https://img.shields.io/badge/Helio-AI-blue) ![Version](https://img.shields.io/badge/version-1.0.0-green) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+The platform provides content generation, image processing, resume analysis, and productivity workflows while handling authentication, subscriptions, usage control, file processing, and cloud storage in a scalable architecture.
 
-## 🚀 Live Demo
+Built as a full-stack application, Helio demonstrates modern SaaS development practices including secure authentication, backend API integration, database-driven features, and deployment automation.
 
-Experience Helio AI live: [https://helio-ai-nu.vercel.app/](https://helio-ai-nu.vercel.app/)
+## Live Demo
 
-## ✨ Features
+https://helio-ai-nu.vercel.app/
 
-# Helio AI 🌞
+## Key Features
 
-A comprehensive AI-powered web application that offers multiple intelligent tools including content generation, image processing, and career assistance in a sleek, modern interface.
+### AI-Powered Tools
 
-![Helio AI](https://img.shields.io/badge/Helio-AI-blue) ![Version](https://img.shields.io/badge/version-1.0.0-green) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+- Article generation
+- Content transformation
+- Concept simplification
+- Resume analysis and feedback
+- AI image generation
+- Background removal
 
-## 🚀 Live Demo
+### Platform Features
 
-Experience Helio AI live: [https://helio-ai-nu.vercel.app/](https://helio-ai-nu.vercel.app/)
+- User authentication and account management
+- Subscription-based access control
+- Usage restrictions and feature gating
+- File upload and processing workflows
+- User history and saved content
+- Cloud-based asset storage
+- Responsive multi-device experience
 
-## ✨ Features
+## Technology Stack
 
-- **🤖 Articles Generator**: Create well-structured, AI-powered articles on any topic
-- **🎨 Idea Simplifier**: Break down complex concepts into easy-to-understand explanations
-- **⚡ Image Generator**: Generate stunning images from text descriptions using AI
-- **📱 Background Removal**: Automatically remove backgrounds from images with precision
-- **🌙 Resume Reviewer**: Get intelligent feedback and improvements for your resume
-- **🔒 Content Transformer**: Modify and enhance existing content with AI capabilities
+### Frontend
 
-## 🛠️ Tech Stack
+- React
+- React Router
+- TanStack Query
+- Tailwind CSS
 
-- **Frontend**: React, React Router, Tanstack Query, JavaScript
-- **Backend**: Express.js
-- **Authentication**: Clerk
-- **Database**: PostgreSQL, Neon
-- **Styling**: Tailwind CSS
-- **Deployment**: Vercel
-- **AI Integration**: OpenAI
+### Backend
+
+- Node.js
+- Express.js
+
+### Database
+
+- PostgreSQL
+- Neon
+
+### Authentication
+
+- Clerk
+
+### Cloud & Infrastructure
+
+- Cloudinary
+- Vercel
+
+### AI Integrations
+
+- Groq (Llama Models)
+- Clipdrop
+- Remove.bg
+
+### Screenshots
+
+- [Home](/docs/images/helio1.jpeg)
+- [Tools](/docs/images/helio4.jpeg)
+- [Article](/docs/images/helio.jpeg)
+- [Community](/docs/images/helio3.jpeg)
